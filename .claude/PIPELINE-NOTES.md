@@ -172,3 +172,20 @@ plans/<feature>/reports/
 - Dates go inside each report, not in the file name. Re-runs add `-2`, `-3`; nothing is overwritten (this also fixes spec-matcher replacing its first report when a fix unit runs).
 - Update: spec-verifier, task-verifier, code-reviewer, spec-matcher agents; reviewing-plans, reviewing-code, checking-spec-conformance skills; build-feature (phase report path, fix-unit report path, final links); PIPELINE-NOTES dry-run table.
 - Phase of a unit = unit id without its letter (`2a` -> `phase-2`).
+
+### B3. Commit safety and PRs (user request; ideas taken from garrytan/gstack /ship and /review)
+
+Gaps today: units commit with `git add -A` on whatever branch is checked out (master here), nothing checks what gets staged, and there is no PR step.
+
+Borrow from gstack, adapted to our pipeline:
+
+1. **Feature branch.** Step 0 creates or checks out `feature/<feature>`. Refuse to run units on the default branch (gstack: "Ship from a feature branch."). Hook option: block implementer spawns when HEAD is the default branch.
+2. **Stage only what the unit owns.** Replace `git add -A` with a `stage-unit.sh <plan> <unit>` script: stage the unit's Files plus `PLAN`; list any other changed file and stop. A file outside Files is allowed only if the implementer logged it under Differences. Test with fixtures.
+3. **Secret and junk scan before each commit.** Scan the staged diff for keys, tokens, `.env`, large or binary files; a hit blocks the commit (gstack blocks HIGH secret hits and asks on MEDIUM).
+4. **Gate integrity in code review.** Our Stop hook pushes the implementer to make tests green, so the reviewer must flag weakened gates: a test deleted, skipped or with relaxed asserts, snapshots changed without their test, lint/CI config relaxed, swallowed exceptions. Always P0/P1, never auto-fixed. Add to reviewing-code.
+5. **Scope drift in code review.** Diff vs the unit's tasks: files not in Files, unrequested refactors, behaviour no task asked for. Output `Scope: clean | drift` in the SUMMARY.
+6. **Regression proof.** Optional: a new test must fail at BASE and pass at HEAD (gstack "base control"). Cheap for us since we record BASE.
+7. **No completion claim without fresh evidence.** Commit only after TEST_CMD ran green in this step (already true) and record the command and result in the phase report.
+8. **Never force-push, never amend, never commit to the default branch.** Put it in the build-feature rules.
+9. **PR at the end (new step 6).** Ask first (outward-facing). Push the branch, then `gh pr create` (update if one exists). Draft when any Critical/P0/P1 is open. Body: one-line summary, the brief's goal, Spec link, units and commits, Differences from the spec, final conformance SUMMARY, tests run, open findings, links to reports. `Closes #N` only when the final conformance has no gaps, else `Linked to #N`. Scan the body for secrets before posting.
+10. Skip for now: version bumps, CHANGELOG, coverage %, deploy/canary. Revisit if a real project needs them.
