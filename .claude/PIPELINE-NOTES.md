@@ -208,3 +208,47 @@ Conflicts between gstack and pstack, to decide with the user:
 - Draft vs ready: gstack opens a draft while findings are open; pstack opens every PR ready. Proposal: ready when the phase gate passed, draft only with open Critical/P0.
 - Amending: pstack amends a just-made commit when the fix belongs in it; gstack never force-pushes. Proposal: amend only unpushed commits; never rewrite pushed history.
 - pstack has no staged-file check. Keep our own `stage-unit.sh` (item 2) and the gate-integrity review (item 4) from gstack.
+
+#### B3 addendum 2: full read of pstack (2026-11-15)
+
+Read in full: poteto-mode SKILL.md; playbooks opening-a-pr, shipping, babysit, feature, bug-fix, refactoring, multi-phase-plan, autonomous-run, autopilot-full, autopilot-stack, orchestrate, pause-safely, session-pickup, worktree-cleanup, references/bugbot-triage; skills deslop (cursor-team-kit), no-comments + agent comment-sicko, tdd, blast-radius, correct, interrogate, swarm, figure-it-out, technical-writing, unslop, show-me-your-work; all principle-* skills; docs/harness/claude-code.md, docs/guide/06 and 07. Descriptions only: how, why, architect, arena, reflect, recall, teach, ketchup, statechart, verification-skill generators, benchmark-checklist, the perf/forensics/eval/prototype/visual-parity playbooks. Not read: automations/benny, other guide pages.
+
+Ideas worth taking, by where they land:
+
+Implementer (before it stops):
+- deslop its own diff: drop needless comments, abnormal try/catch or defensive checks on trusted paths, casts that dodge types, deep nesting. Behaviour unchanged.
+- tdd guardrails, verbatim: "Do not change tests merely to match a wrong implementation." "Do not weaken existing assertions unless the expected behavior has genuinely changed and the reason is clear." Run the new test before the code and confirm it fails for the intended reason.
+
+Code reviewer:
+- Gate integrity (from gstack) plus pstack autopilot-full step 6: anything that loosens a gate needs proof, "because the owner is the one who wants green".
+- Test quality by two imagined edits (principle-test-behavior-not-implementation): break the behaviour, does the test fail? change internals only, does it still pass? Flag tests that fail either.
+- Comments: keep only a non-obvious why the code cannot show (comment-sicko keep-list: license headers, external constraints, public API docs, issue links).
+- Findings need evidence a run can reproduce (interrogate: "only findings proven by a run survive").
+- Optional for risky units: blast-radius, "find the one fact it's safe because of" and prove it by running code.
+
+Orchestrator commit step:
+- A verdict covers a patch. Record `git diff BASE | git patch-id` at review time; commit only if the staged patch-id matches, else re-review (shipping step 3). Cheap structural check that nothing changed after review.
+- Commit order tells the story: failing test, then the fix (bug-fix step 5). Optional per unit.
+- Commit and PR text through technical-writing + unslop rules (we already ban em dashes; unslop also bans mid-sentence colons and filler).
+
+PRs (extends item 9):
+- One PR per phase, stacked; root targets main; open ready, not draft; body sections Why / What changed / Scope / Tradeoffs / Blast Radius / Verification, under ~40 lines; details linked to reports/.
+- Babysitting a PR starts only when the user asks; it never merges. Landing is separate: only a verified contiguous run from the bottom, one PR at a time, read back the merge state.
+- Green CI is not a verdict. Only an agent that did not write the code gives one (we already split implementer and reviewer).
+
+Verification:
+- "Tests alone are not sufficient verification." Spec-matcher (or a phase step) should run the real artifact, e.g. the CLI command from the spec, and paste the output.
+- Verdicts are VERIFIED / NOT VERIFIED / INCONCLUSIVE; inconclusive is not a pass.
+
+AFK mode (B1):
+- Decision trail per show-me-your-work: append-only `plans/<feature>/decisions.tsv` (ts, phase, decision, why, evidence, result), one row per unit and decision; the final review ends with an "Attention" section from a reviewer that did not do the work.
+- Exit condition as a checkable predicate; never relax it to declare victory (never edit the spec or tests to pass).
+- Pause safely: on stop, finish or back out of the current step, commit `wip:`, write a resume note. Our status.sh already covers pickup.
+- "Always pause" list: force-push, deploys, data deletion, external messages. Pushing and PRs ask the user.
+
+Process:
+- encode-lessons-in-structure and /correct: a rule enforced by a hook or script beats prose. Keep a table in PIPELINE-NOTES pairing each pipeline rule with what enforces it (hook, script, prompt only).
+
+Tension with our design, decide with the user:
+- pstack prefers fresh subagents over resuming ("Interrupt-chained resumes silently drop directives"). Our fix loops resume the same writer/implementer via SendMessage. Option: fresh agent per fix round with the consolidated brief (original prompt + findings + prior report).
+- pstack does not check which files get staged; it relies on a clean worktree per task. Keep stage-unit.sh.
