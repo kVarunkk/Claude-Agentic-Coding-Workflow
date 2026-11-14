@@ -110,3 +110,21 @@ Shape used by `check-spawn.sh`:
 - `check-spawn.sh` parses the fixed `PLAN:` / `UNIT:` prompt lines. Keep that form verbatim in `/build-feature`.
 - Agent teams change named-subagent launch. Keep them off.
 - Windows: hook commands are run with `bash "<path>"` because the project path has spaces.
+
+## Dry run (M6)
+
+Status: PENDING. Needs an interactive session (gates, restart, kill). Toy repo made by `bash tests/pipeline/make-toy.sh` at `../pipeline-toy` (Node CLI, `npm test`, `MAX_UNIT_TASKS=2` to force sub-phases). Refresh its pipeline files after changes with `bash tests/pipeline/make-toy.sh --sync`.
+
+Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), then
+`/build-feature json-flag Add a --json flag to the greet CLI that prints {"greeting":"Hello, <name>"}, and an --upper flag that uppercases the greeting.`
+
+| # | Check | How | Result |
+|---|---|---|---|
+| 1 | spec gate stops and waits | answer Approve | |
+| 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve | |
+| 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" | |
+| 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript | |
+| 5 | review fix loop via SendMessage | while a unit's implementer runs: `bash scripts/seed-defect.sh` in another terminal; reviewer flags it, the same implementer fixes it | |
+| 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply | |
+| 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` | |
+| 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task | |
