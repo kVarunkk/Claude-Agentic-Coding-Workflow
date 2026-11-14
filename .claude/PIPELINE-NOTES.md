@@ -129,15 +129,15 @@ Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), the
 
 | # | Check | How | Result |
 |---|---|---|---|
-| 0 | alignment: interview in rounds, brief written, consensus question waits; spec-writer only after Agree | answer the questions, pick Agree. Optional: before agreeing, ask it to spawn spec-writer; the hook must block it || PASS. 1 plain-text why, 4 AskUserQuestion choices, brief D-01..D-07, Agree. Hook block before Agree not tried. |
-| 1 | spec gate stops and waits; spec cites brief decisions | answer Approve || PASS. Waited 3 times (user chose P2 fix rounds). Spec cites D-ids. |
-| 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve || PASS. Units 0, 1, 2a, 2b, 3. Verifier caught a real P1 (diff against working tree after commits). |
-| 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" || NOT TESTED. |
-| 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript || PASS. One implementer per unit (0, 1, 2a, 2b, 2c, 3). |
-| 5 | review fix loop via SendMessage | while a unit's implementer runs: `bash scripts/seed-defect.sh` in another terminal; reviewer flags it, the same implementer fixes it || PASS without seeding. Unit 1 reviewer caught `'back\slash'` (no backslash); same implementer fixed it via SendMessage; re-review saved as `-2`. |
-| 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply || NOT TESTED (tests never red). SubagentStop did fire: capture file from the toy session exists. |
-| 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` || PASS. Reports, tags and gates for phases 0 to 3. Request changes at phase 2 added fix unit 2c. |
-| 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task || NOT TESTED. |
+| 0 | alignment: interview in rounds, brief written, consensus question waits; spec-writer only after Agree | answer the questions, pick Agree. Optional: before agreeing, ask it to spawn spec-writer; the hook must block it | PASS. 1 plain-text why, 4 AskUserQuestion choices, brief D-01..D-07, Agree. Hook block before Agree not tried. |
+| 1 | spec gate stops and waits; spec cites brief decisions | answer Approve | PASS. Waited 3 times (user chose P2 fix rounds). Spec cites D-ids. |
+| 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve | PASS. Units 0, 1, 2a, 2b, 3. Verifier caught a real P1 (diff against working tree after commits). |
+| 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" | NOT TESTED. |
+| 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript | PASS. One implementer per unit (0, 1, 2a, 2b, 2c, 3). |
+| 5 | review fix loop via SendMessage | while a unit's implementer runs: `bash scripts/seed-defect.sh` in another terminal; reviewer flags it, the same implementer fixes it | PASS without seeding. Unit 1 reviewer caught `'back\slash'` (no backslash); same implementer fixed it via SendMessage; re-review saved as `-2`. |
+| 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply | NOT TESTED (tests never red). SubagentStop did fire: capture file from the toy session exists. |
+| 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` | PASS. Reports, tags and gates for phases 0 to 3. Request changes at phase 2 added fix unit 2c. |
+| 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task | NOT TESTED. |
 
 ### Run 1 findings (2026-11-15)
 
