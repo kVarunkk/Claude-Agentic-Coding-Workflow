@@ -189,3 +189,22 @@ Borrow from gstack, adapted to our pipeline:
 8. **Never force-push, never amend, never commit to the default branch.** Put it in the build-feature rules.
 9. **PR at the end (new step 6).** Ask first (outward-facing). Push the branch, then `gh pr create` (update if one exists). Draft when any Critical/P0/P1 is open. Body: one-line summary, the brief's goal, Spec link, units and commits, Differences from the spec, final conformance SUMMARY, tests run, open findings, links to reports. `Closes #N` only when the final conformance has no gaps, else `Linked to #N`. Scan the body for secrets before posting.
 10. Skip for now: version bumps, CHANGELOG, coverage %, deploy/canary. Revisit if a real project needs them.
+
+#### B3 addendum: poteto's pstack (cursor/plugins, folder pstack), the user's main reference
+
+The X article itself could not be read (x.com 402, mirrors failed). Notes are from the repo: README, `skills/poteto-mode/SKILL.md`, `playbooks/opening-a-pr.md`, `skills/principle-sequence-verifiable-units/SKILL.md`. deslop and no-comments were not read.
+
+Take from pstack:
+- **Worktree off main.** "Work from a git worktree off main. Subagents inherit it." Fits item 1 and M7. A dirty branch with unrelated work: patch it out, fresh worktree, apply.
+- **One PR per phase, stacked.** "Prefer five narrow PRs to one large PR." Phase 1 PR targets main; phase 2 branches from phase 1's tip and targets it. Our phases already end green with a report and a tag, so each phase gate can open its PR. Replaces item 9's single PR (AFK mode: open them all at the end).
+- **Commits tell the story.** "Each commit lands on its own and the sequence reads as an argument." Canonical shape: failing test commit, then the fix. Option: implementer commits stay one per unit (current), or split test and code into two commits per unit. Decide with the user.
+- **PR body is a one-minute briefing, under ~40 lines**, headings in order, empty ones dropped: `## Why` (opens with the user's goal, from the brief), `## What changed`, `## Scope` (always), `## Tradeoffs`, `## Blast Radius`, `## Verification` (real run paths and results). SHAs, verdicts and long lists go in linked files (our `reports/`), not the body. Prefer this over gstack's long body.
+- **Titles** `type(scope): subject`, no trailing period. Our commits already follow this.
+- **Cleanup pass before commit / review** (deslop, no-comments): strip AI slop and needless comments from the diff. Add as a reviewer check, not a separate agent.
+- **Always pause for irreversible writes**: force-push to shared branches, deploys, data deletion, messages. Pushing and opening PRs ask the user first, also in AFK mode.
+- **Broken pipeline skill mid-task**: fix it separately; don't silently work around it.
+
+Conflicts between gstack and pstack, to decide with the user:
+- Draft vs ready: gstack opens a draft while findings are open; pstack opens every PR ready. Proposal: ready when the phase gate passed, draft only with open Critical/P0.
+- Amending: pstack amends a just-made commit when the fix belongs in it; gstack never force-pushes. Proposal: amend only unpushed commits; never rewrite pushed history.
+- pstack has no staged-file check. Keep our own `stage-unit.sh` (item 2) and the gate-integrity review (item 4) from gstack.
