@@ -17,7 +17,7 @@ This skill checks evidence; it doesn't hunt for new defects. That is the job of 
 - Read `plans/<feature>/feature-<feature>-spec.md` and `-tasks.md`. With no feature given and exactly one folder in `plans/`, use that folder; otherwise ask.
 - From the spec, list every checkable item: `REQ`, `SEC`, `CON`, `GUD`, `PAT` and `TEST` ids, the data model (§3), component signatures (§4), API contracts and config values. Note each item's exact limits and values.
 - From the tasks file, read the ticked tasks, **Decisions taken** and **Differences from the spec**. A logged difference is an accepted deviation.
-- With `--phase N`, limit grading to the ids the traceability table maps to that phase's tasks. Still run the full suite.
+- With `--phase N`, limit grading to the ids in the Spec column of phase N's units (`## Phase N…`, including sub-phases `Na`, `Nb`). Still run the full suite.
 
 ## 2. Run the tests
 
@@ -51,14 +51,14 @@ Code existing isn't evidence. If a test was skipped, or its assertions don't che
 
 | Status | When | Severity |
 |---|---|---|
-| ✅ Met | does exactly what the id says; Tested or Verified | — |
+| ✅ Met | does exactly what the id says; Tested or Verified | none |
 | 🧪 Untested | looks right, but Inspected only | Critical for REQ/SEC; Warning for GUD/PAT |
 | 🟡 Partial | some of the stated behaviour is there; name exactly what is missing | Warning (Critical for SEC) |
 | ❌ Missing | nothing implements it | Critical |
 | ⚠️ Diverges | does something else, with no Differences entry | Critical |
-| 📝 Accepted | differs, but logged under Differences or Decisions taken | — |
+| 📝 Accepted | differs, but logged under Differences or Decisions taken | none |
 | 🔄 Outdated | the code is right and the spec is stale (a deliberate, unlogged improvement) | Warning: update the spec |
-| ➖ Not started | its task hasn't started (only when checking work in progress) | — |
+| ➖ Not started | its task hasn't started (only when checking work in progress) | none |
 
 **Materiality.** If the naming, file layout or technique differs but the behaviour and contract hold, the id conforms. Flag missing behaviour, contradicted decisions, broken contracts, skipped validation or migration steps, and unplanned scope. When torn between two statuses, give the evidence for both and pick the stricter one.
 
@@ -74,7 +74,20 @@ For a large spec (40+ ids), offer to grade sections in parallel with read-only s
 
 ## 5. Report
 
-Write `plans/<feature>/feature-<feature>-conformance.md` as a dated snapshot, replacing the previous one. Post the summary and the gaps in chat.
+Write `plans/<feature>/reports/conformance.md` (with `--phase N`: `reports/conformance-phase-N.md`) as a dated snapshot, replacing the previous one. That report is the only file you write. Post the summary and the gaps in chat, then end with this block and nothing after it:
+
+```
+SUMMARY
+verdict: pass|fail
+p0: <Critical count>
+p1: <Warning count>
+p2: 0
+top:
+- <id> <status> <one line>   (max 5, Critical first)
+report: plans/<feature>/reports/conformance[-phase-N].md
+```
+
+`verdict` is `fail` when p0 is above 0.
 
 ```
 ---
@@ -82,7 +95,7 @@ spec: plans/<feature>/feature-<feature>-spec.md
 spec_version: <from spec front-matter>
 checked: <YYYY-MM-DD>
 commit: <short sha, or "no git">
-tests: <command> — <passed>/<total> (<log location>)
+tests: <command>: <passed>/<total> (<log location>)
 mode: full | diagnostic (suite failing) | phase N
 ---
 
@@ -92,7 +105,7 @@ mode: full | diagnostic (suite failing) | phase N
 **Verdict:** conforms | conforms with gaps | does not conform
 
 ## Critical
-- **REQ-014** ⚠️ Diverges — spec: at most 5 turns; `lib/memory/recall.ts:88` returns 10. No Differences entry.
+- **REQ-014** ⚠️ Diverges: spec: at most 5 turns; `lib/memory/recall.ts:88` returns 10. No Differences entry.
 
 ## Warnings
 ## Not in the spec
@@ -107,7 +120,7 @@ Omit empty sections.
 
 ## 6. Next steps
 
-Offer these options, and wait for the user to pick before changing anything:
+When you run as a subagent, skip this section: the SUMMARY block is your last output. Otherwise offer these options, and wait for the user to pick before changing anything:
 
 - **Fix the Critical items** as new or reopened tasks, test-first.
 - **Record intended divergences.** For Outdated or intended divergences, log them under **Differences from the spec** and update the spec through `writing-specs`.

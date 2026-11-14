@@ -65,15 +65,15 @@ Then take the author's side against every finding that no run confirmed: is it g
 ## 6. Report
 
 ```
-## Review — <scope> (<base> → <head>)
+## Review: <scope> (<base> → <head>)
 Verdict: approve | approve-with-notes | changes-requested
 Findings: P0 <n> · P1 <n> · P2 <n> · P3 <n>    Partitions reviewed: <n>
 
 ### Index
-1. [P0][High] F01 — <title> — `path/file.ts:42`
-2. [P1][Med]  F02 — <title> — `path/other.ts:10`
+1. [P0][High] F01: <title> `path/file.ts:42`
+2. [P1][Med]  F02: <title> `path/other.ts:10`
 
-### F01 — <title>
+### F01: <title>
 - Severity / confidence: P0 / High
 - Location: `path/file.ts:42` (`functionName`). Also affects: <…>
 - Lens: tests | data-shape | correctness | security | spec | design | performance
@@ -85,7 +85,7 @@ Findings: P0 <n> · P1 <n> · P2 <n> · P3 <n>    Partitions reviewed: <n>
 <behaviour changed without a test; tests a wrong implementation would still pass>
 
 ### Open questions
-Q01 — <question> — Blocking: yes | no
+Q01: <question> Blocking: yes | no
 
 ### Set aside
 <behaviour considered and judged out of scope, one line each, with the reason>
@@ -99,8 +99,21 @@ Q01 — <question> — Blocking: yes | no
 - **P2**: a design or maintainability cost that will hurt within weeks.
 - **P3**: a nit; the author decides.
 
-Ids (`F01`, `Q01`) stay stable through the follow-up discussion. One root cause is one finding. Omit empty sections. When the change belongs to a feature in `plans/`, also save the report as `plans/<feature>/reviews/<YYYY-MM-DD>-<scope>.md`.
+Ids (`F01`, `Q01`) stay stable through the follow-up discussion. One root cause is one finding. Omit empty sections. When the change belongs to a feature in `plans/`, also save the report as `plans/<feature>/reports/review-<scope>-<YYYY-MM-DD>.md` (scope is the unit id when there is one, e.g. `review-2a-2026-11-14.md`; add `-2`, `-3` for re-reviews the same day). That report file is the only file you write.
+
+End every reply with this block and nothing after it. Count P3 into `p2`. `verdict` is `fail` when p0 or p1 is above 0.
+
+```
+SUMMARY
+verdict: pass|fail
+p0: <n>
+p1: <n>
+p2: <n>
+top:
+- <F-id> [P<n>] <file:line> <one line>   (max 5, most severe first)
+report: <path to the saved report, or inline>
+```
 
 ## 7. Fixes, when the user asks
 
-Clarify any unclear finding first. Then fix in this order: P0s, then the quick fixes, then the larger ones. Do one finding at a time and run its test after each. Report each fix as "F03 fixed — <what changed>". If a finding turns out wrong while fixing, say so with the evidence.
+Clarify any unclear finding first. Then fix in this order: P0s, then the quick fixes, then the larger ones. Do one finding at a time and run its test after each. Report each fix as "F03 fixed: <what changed>". If a finding turns out wrong while fixing, say so with the evidence.

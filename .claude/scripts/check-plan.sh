@@ -4,13 +4,18 @@
 #   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count)
 #   3. every referenced id is declared somewhere
 #   4. no template placeholders or TODO/TBD left
-# Usage: check-plan.sh plans/<feature>     Exit code 1 on failures (1–2), 0 otherwise.
+#   5. tasks grammar: "## Phase <id>: <title>" units, optional "depends:", one table with
+#      ID | Task | Spec | Files | Status | Done, status [ ] or [x], ISO date on done rows,
+#      Files filled, at most MAX_UNIT_TASKS tasks per unit, depends targets exist
+# Usage: check-plan.sh plans/<feature>     Exit 1 on failures (1, 2, 5), 0 otherwise.
 set -u
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+load_conf
 dir="${1:?usage: check-plan.sh plans/<feature>}"
-spec=$(ls "$dir"/*-spec.md 2>/dev/null | head -1)
-tasks=$(ls "$dir"/*-tasks.md 2>/dev/null | head -1)
-[ -n "$spec" ] || { echo "FAIL: no *-spec.md in $dir"; exit 1; }
-[ -n "$tasks" ] || { echo "FAIL: no *-tasks.md in $dir"; exit 1; }
+spec=$(ls "$dir"/feature-*-spec.md 2>/dev/null | head -1)
+tasks=$(ls "$dir"/feature-*-tasks.md 2>/dev/null | head -1)
+[ -n "$spec" ] || { echo "FAIL: no feature-*-spec.md in $dir"; exit 1; }
+[ -n "$tasks" ] || { echo "FAIL: no feature-*-tasks.md in $dir"; exit 1; }
 
 P='REQ|SEC|CON|GUD|PAT|ALT|DEP|TEST|RISK|ASSUMPTION|Q'
 ALL="$P|TASK|GOAL"
@@ -51,6 +56,32 @@ fi
 ph=$(grep -nE "TBD|TODO|<YYYY-MM-DD>|<feature>|<one sentence|<area>|<repo or team>" "$spec" "$tasks")
 if [ -n "$ph" ]; then
   echo "WARN: placeholders or TODO/TBD left:"; echo "$ph" | sed 's/^/  /'; warn=1
+fi
+
+# 5. Tasks grammar.
+if ! parsed=$(parse_tasks "$tasks" 2>&1); then
+  echo "FAIL: tasks grammar:"; echo "$parsed" | sed 's/^/  /'; fail=1
+else
+  gram=$(printf '%s\n' "$parsed" | awk -F'\t' -v max="$MAX_UNIT_TASKS" '
+    $1 == "unit" { u[$2] = 1; ph[$3] = 1; dep[$2] = $4; order[++n] = $2 }
+    $1 == "task" {
+      cnt[$2]++
+      if ($4 == "done" && $5 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) print $3 ": done but Done is not an ISO date (\"" $5 "\")"
+      if ($4 == "open" && $5 != "") print $3 ": open but Done is filled (\"" $5 "\")"
+      if ($6 == "") print $3 ": Files is empty"
+    }
+    END {
+      for (i = 1; i <= n; i++) {
+        x = order[i]
+        if (cnt[x] > max) print "unit " x ": " cnt[x] " tasks, max is " max " (split into sub-phases)"
+        if (dep[x] == "") continue
+        k = split(dep[x], d, ",")
+        for (j = 1; j <= k; j++) if (!(d[j] in u) && !(d[j] in ph)) print "unit " x ": depends on unknown unit or phase \"" d[j] "\""
+      }
+    }')
+  if [ -n "$gram" ]; then
+    echo "FAIL: tasks grammar:"; echo "$gram" | sed 's/^/  /'; fail=1
+  fi
 fi
 
 nreq=$(echo "$spec_decl" | grep -cE "^(REQ|SEC)-")

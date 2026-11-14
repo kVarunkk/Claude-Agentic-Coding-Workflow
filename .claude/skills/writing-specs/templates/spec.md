@@ -66,7 +66,7 @@ Notes:
 
 ## 4. Components
 
-### 4.1 <Component> — `<path>`
+### 4.1 <Component>: `<path>`
 
 <Signatures, behaviour, edge cases. Use tables for tools and routes, and code blocks for exact output formats.>
 
@@ -96,7 +96,7 @@ New:
 - `<path>`
 
 Changed:
-- `<path>` — <what changes>
+- `<path>`: <what changes>
 
 ## 9. Testing
 
