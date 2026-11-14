@@ -87,6 +87,16 @@ Shape used by `check-spawn.sh`:
 
 - [V] With agent teams on, a named subagent spawned from the main conversation launches as a teammate unless it passes `isolation`. Keep `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` unset.
 
+## M3/M4 live findings (2026-11-14)
+
+- New agent files are not picked up by an already running session ("Agent type 'spec-verifier' not found"). Restart Claude Code after adding or renaming agents.
+- `claude -p --agent <name>` runs the agent as the main session and does NOT preload its `skills:` (agents reported "PRELOADED: none"). Not a valid test of the pipeline. Spawned as real subagents (headless parent calling `Agent`), skills were preloaded: implementer `writing-tasks`, code-reviewer `reviewing-code`; spec-verifier returned the exact SUMMARY format.
+- Real PreToolUse stdin for `Agent` (captured): `session_id`, `cwd` (Windows form `C:\\...`), `scratchpad_dir`, `prompt_id`, `permission_mode`, `effort`, `hook_event_name`, `tool_name: "Agent"`, `tool_input: {description, prompt, subagent_type}`, `tool_use_id`. Matches section 1.
+- Real stdin of the implementer frontmatter Stop hook: `hook_event_name: "SubagentStop"`, `agent_type: "implementer"`, `agent_id`, `stop_hook_active`, `agent_transcript_path`, `last_assistant_message`, `background_tasks`, `session_crons`. Confirms sections 2 and 4.
+- Live block works: a wrong `implementer` spawn in this session was refused with the check-spawn reason shown to the model.
+- code-reviewer could not save its report through a Bash heredoc (permission prompt). It now has `Write`, limited by its prompt to `plans/<feature>/reports/`. Deviation from the plan's tool table.
+- Each hook writes its last stdin to `$TMPDIR/pipeline-last-<hook>.json` for debugging.
+
 ## Known limitations
 
 - Hooks cannot tell who ran `approve.sh`. Use the strict gate option (user runs `! bash .claude/scripts/approve.sh plans/<feature> phase-N`) when that matters.
