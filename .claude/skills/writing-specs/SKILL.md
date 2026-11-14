@@ -21,7 +21,7 @@ Write for an engineer who knows the language but has never seen this codebase or
 ```
 - [ ] 1. Check plans/<feature>/. If the spec exists, update it (bump version and last_updated); don't start over.
 - [ ] 2. Ground yourself. Read the code the feature touches, CLAUDE.md, sibling plans/ and the test setup. Note conventions, code to reuse and behaviour that must keep working.
-- [ ] 3. Settle decisions. Use what the conversation, a grilling or your prompt already decided. Ask only questions whose answer changes what gets built, each with a recommended answer. With more than ~5 open, suggest /grilling. As a subagent you can't ask: record each one under Open questions with your recommended answer.
+- [ ] 3. Settle decisions. If `plans/<feature>/feature-<feature>-brief.md` exists, its decisions are agreed with the user and binding: build on them, cite their `D-` ids, never reopen them. Otherwise use what the conversation or your prompt already decided. Ask only questions whose answer changes what gets built, each with a recommended answer. With more than ~5 open, suggest the `aligning-requirements` skill first. As a subagent you can't ask: record each one under Open questions with your recommended answer.
 - [ ] 4. Agree the test seams: the public interfaces the tests will drive. Prefer existing, high-level seams, and fewer of them. Confirm them with the user, or record them as a decision when you can't ask.
 - [ ] 5. Research what you don't know (library APIs, limits, prices, prior art). Cite it in Alternatives or Risks.
 - [ ] 6. Write the spec from templates/spec.md.

@@ -103,6 +103,14 @@ Shape used by `check-spawn.sh`:
 - The approval commit is tagged `<feature>-tasks` so the first phase report has a diffstat base.
 - Phase-end Critical gaps become a fix unit (`N` plus the next free letter) written by a fresh task-writer, so `next-unit.sh` and `check-spawn.sh` stay consistent. One fix unit per phase, then the gate.
 
+## Alignment step (added 2026-11-14, user request)
+
+- The user and the agent must reach consensus before any spec is written. `/build-feature` step 1 runs the `aligning-requirements` skill in the main session (only the main session can ask the user). It interviews in rounds, writes `plans/<feature>/feature-<feature>-brief.md` with decision ids `D-01`..., and asks "Is this what we are building?" (Agree / Change something / Stop). Agree runs `approve.sh <plan> brief`.
+- Enforced: `check-spawn.sh` blocks any `spec-writer` spawn without a `PLAN:` line and `approvals/brief`.
+- The brief is binding downstream: spec-writer must not reopen its decisions; spec-verifier grades a contradiction or a dropped decision as P0.
+- `aligning-requirements` is model-invocable (so `/build-feature` can load it) and can also be run on its own. The old `grilling` skill is untouched and not used by the pipeline.
+- `check-spawn.sh` without jq now blocks only gated spawns (implementer, spec-writer); before, it blocked every subagent spawn.
+
 ## Known limitations
 
 - Hooks cannot tell who ran `approve.sh`. Use the strict gate option (user runs `! bash .claude/scripts/approve.sh plans/<feature> phase-N`) when that matters.
@@ -120,7 +128,8 @@ Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), the
 
 | # | Check | How | Result |
 |---|---|---|---|
-| 1 | spec gate stops and waits | answer Approve | |
+| 0 | alignment: interview in rounds, brief written, consensus question waits; spec-writer only after Agree | answer the questions, pick Agree. Optional: before agreeing, ask it to spawn spec-writer; the hook must block it | |
+| 1 | spec gate stops and waits; spec cites brief decisions | answer Approve | |
 | 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve | |
 | 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" | |
 | 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript | |

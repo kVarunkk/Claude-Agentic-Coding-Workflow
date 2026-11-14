@@ -12,7 +12,7 @@ copy_pipeline() {
   rm -rf "$T/.claude/agents" "$T/.claude/hooks" "$T/.claude/scripts" "$T/.claude/skills"
   cp -r "$ROOT/.claude/agents" "$ROOT/.claude/hooks" "$ROOT/.claude/scripts" "$T/.claude/"
   mkdir -p "$T/.claude/skills"
-  for s in build-feature writing-specs writing-tasks reviewing-plans reviewing-code checking-spec-conformance; do
+  for s in build-feature aligning-requirements writing-specs writing-tasks reviewing-plans reviewing-code checking-spec-conformance; do
     cp -r "$ROOT/.claude/skills/$s" "$T/.claude/skills/"
   done
   cp "$ROOT/.claude/settings.json" "$T/.claude/"

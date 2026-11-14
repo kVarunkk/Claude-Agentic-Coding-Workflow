@@ -4,6 +4,8 @@
 #   - that unit and task set equal next-unit.sh output,
 #   - approvals/spec and approvals/tasks exist,
 #   - for a unit in a later phase than the first, approvals/phase-<previous phase> exists.
+# Blocks a spec-writer spawn unless its prompt has a "PLAN: plans/<feature>" line and
+# approvals/brief exists, i.e. the user agreed the brief first.
 # Every other subagent type is allowed. SendMessage resumes are not Agent calls and never reach here.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,17 +13,19 @@ SCRIPTS="$HERE/../scripts"
 . "$SCRIPTS/lib.sh"
 input=$(cat)
 printf '%s\n' "$input" > "${TMPDIR:-/tmp}/pipeline-last-check-spawn.json" 2>/dev/null
-find_jq || { echo "check-spawn: jq not found; cannot verify the implementer spawn" >&2; exit 2; }
-
-block() { echo "Blocked implementer spawn: $*" >&2; exit 2; }
+if ! find_jq; then
+  # Without jq, block only spawns that look gated; let everything else through.
+  printf '%s' "$input" | grep -qE '"subagent_type" *: *"(implementer|spec-writer)"' || exit 0
+  echo "check-spawn: jq not found; cannot verify this spawn" >&2; exit 2
+fi
 
 type=$(printf '%s' "$input" | "$JQ" -r '.tool_input.subagent_type // empty' | tr -d '\r')
-[ "$type" = "implementer" ] || exit 0
+case "$type" in implementer|spec-writer) ;; *) exit 0 ;; esac
+block() { echo "Blocked $type spawn: $*" >&2; exit 2; }
 prompt=$(printf '%s' "$input" | "$JQ" -r '.tool_input.prompt // empty' | tr -d '\r')
 
 plan=$(printf '%s\n' "$prompt" | sed -n 's/^PLAN:[[:space:]]*\([^[:space:]]*\)[[:space:]]*$/\1/p' | head -1)
-unit_line=$(printf '%s\n' "$prompt" | sed -n 's/^UNIT:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*$//')
-[ -n "$plan" ] && [ -n "$unit_line" ] || block 'the prompt must start with "PLAN: plans/<feature>" and "UNIT: <id>: TASK-..." lines, copied from next-unit.sh.'
+[ -n "$plan" ] || block 'the prompt must have a "PLAN: plans/<feature>" line.'
 plan="${plan%/}"
 printf '%s' "$plan" | grep -qE '^plans/[a-z0-9][a-z0-9-]*$' || block "PLAN must be plans/<feature> in kebab-case, got \"$plan\"."
 
@@ -32,6 +36,14 @@ if [ -z "$root" ]; then
 fi
 [ -n "$root" ] && cd "$root" 2>/dev/null || block "cannot resolve the project dir."
 [ -d "$plan" ] || block "no plan dir $plan under $root."
+
+if [ "$type" = "spec-writer" ]; then
+  [ -f "$plan/approvals/brief" ] || block "the brief is not agreed ($plan/approvals/brief missing). Align with the user first (aligning-requirements)."
+  exit 0
+fi
+
+unit_line=$(printf '%s\n' "$prompt" | sed -n 's/^UNIT:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*$//')
+[ -n "$unit_line" ] || block 'the prompt must have a "UNIT: <id>: TASK-..." line, copied from next-unit.sh.'
 
 norm() { # "<id>: TASK-b TASK-a" -> "<id>: TASK-a TASK-b"
   local id rest

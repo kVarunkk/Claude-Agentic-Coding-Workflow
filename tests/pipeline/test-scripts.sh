@@ -68,6 +68,7 @@ eq "tick-unit: unknown unit exits 1"       1 "$(tu partial 7 >/dev/null; echo $?
 
 # ---- approve.sh ----
 ap() { bash "$S/approve.sh" "$TMP/$1" "$2" >/dev/null 2>&1; echo $?; }
+eq "approve: brief"          0 "$(ap partial brief)"
 eq "approve: spec"           0 "$(ap partial spec)"
 eq "approve: phase-2"        0 "$(ap partial phase-2)"
 eq "approve: bad name"       1 "$(ap partial phase-2a)"
@@ -78,12 +79,12 @@ eq "approve: no marker for bad name" "no" "$([ -e "$TMP/partial/approvals/phase-
 # ---- status.sh ----
 st() { bash "$S/status.sh" "$TMP/$1" 2>&1 | tr '\n' ';'; }
 mkdir -p "$TMP/st-none"
-eq "status: empty plan dir"  "spec: missing;tasks: missing;gate: none;next: none;" "$(st st-none)"
+eq "status: empty plan dir"  "brief: missing;spec: missing;tasks: missing;gate: none;next: none;" "$(st st-none)"
 mkdir -p "$TMP/st-spec"; cp "$FX/valid/feature-demo-spec.md" "$TMP/st-spec/"
-eq "status: spec written"    "spec: written;tasks: missing;gate: none;next: none;" "$(st st-spec)"
+eq "status: spec written"    "brief: missing;spec: written;tasks: missing;gate: none;next: none;" "$(st st-spec)"
 bash "$S/approve.sh" "$TMP/st-spec" spec >/dev/null
-eq "status: spec approved"   "spec: approved;tasks: missing;gate: none;next: none;" "$(st st-spec)"
-eq "status: fresh plan, tasks written, next is unit 1" "spec: written;tasks: written;gate: none;next: 1: TASK-010 TASK-011;" "$(st fresh)"
+eq "status: spec approved"   "brief: missing;spec: approved;tasks: missing;gate: none;next: none;" "$(st st-spec)"
+eq "status: fresh plan, tasks written, next is unit 1" "brief: missing;spec: written;tasks: written;gate: none;next: 1: TASK-010 TASK-011;" "$(st fresh)"
 mkplan st-gate1 ""            # phase 1 done, not approved
 eq "status: phase 1 done and unapproved is a pending gate" "gate: 1;" "$(st st-gate1 | grep -o 'gate: [^;]*;')"
 bash "$S/approve.sh" "$TMP/st-gate1" phase-1 >/dev/null
@@ -91,6 +92,10 @@ eq "status: gate clears after approval" "gate: none;next: 2a: TASK-021;" "$(st s
 mkplan st-all "$(tick TASK-021);$(tick TASK-022);$(tick TASK-023);$(tick TASK-030)"
 bash "$S/approve.sh" "$TMP/st-all" phase-1 >/dev/null; bash "$S/approve.sh" "$TMP/st-all" phase-2 >/dev/null
 eq "status: all done, last phase unapproved" "gate: 3;next: none;" "$(st st-all | grep -o 'gate: .*')"
+mkdir -p "$TMP/st-brief"; echo "# Brief" > "$TMP/st-brief/feature-x-brief.md"
+eq "status: brief written" "brief: written;" "$(st st-brief | grep -o '^brief: [^;]*;')"
+bash "$S/approve.sh" "$TMP/st-brief" brief >/dev/null
+eq "status: brief approved" "brief: approved;" "$(st st-brief | grep -o '^brief: [^;]*;')"
 eq "status: malformed exits 1" 1 "$(bash "$S/status.sh" "$TMP/malformed" >/dev/null 2>&1; echo $?)"
 
 done_tests

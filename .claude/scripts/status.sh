@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # status.sh <plan-dir>
 # Prints where /build-feature should resume:
+#   brief: missing|written|approved
 #   spec: missing|written|approved
 #   tasks: missing|written|approved
 #   gate: <N>|none      first numeric phase whose tasks are all done but approvals/phase-<N> is missing
@@ -14,8 +15,10 @@ state() { # glob approval
   elif [ -f "$plan/approvals/$2" ]; then echo approved
   else echo written; fi
 }
+b=$(state 'feature-*-brief.md' brief)
 s=$(state 'feature-*-spec.md' spec)
 t=$(state 'feature-*-tasks.md' tasks)
+echo "brief: $b"
 echo "spec: $s"
 echo "tasks: $t"
 gate=none; next=none

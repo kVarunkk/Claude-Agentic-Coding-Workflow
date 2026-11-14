@@ -65,6 +65,19 @@ eq  "spawn: phase-0 approval missing blocked"    2 "$(spawn implementer "$(P zer
 approve zero phase-0
 eq  "spawn: phase-0 approved allowed"            0 "$(spawn implementer "$(P zero '2a: TASK-021')")"
 
+# ---- check-spawn.sh: spec-writer needs an agreed brief ----
+mkdir -p "$PROJ/plans/newfeat"
+SW='PLAN: plans/newfeat
+Feature: newfeat. Brief: plans/newfeat/feature-newfeat-brief.md.'
+eq  "spec-writer: no brief approval blocked"     2 "$(spawn spec-writer "$SW")"
+has "spec-writer: block names the brief"         "brief is not agreed" "$(cat "$TMP/err")"
+eq  "spec-writer: missing PLAN line blocked"     2 "$(spawn spec-writer "Write a spec for newfeat")"
+approve newfeat brief
+eq  "spec-writer: agreed brief allowed"          0 "$(spawn spec-writer "$SW")"
+eq  "spec-writer: does not need a UNIT line"     0 "$(spawn spec-writer "$SW")"
+eq  "spawn: no jq still lets other agents through" 0 "$(spawn_json Explore x | PATH=/usr/bin:/bin LOCALAPPDATA=/nonexistent "$(command -v bash)" "$H/check-spawn.sh" 2>/dev/null; echo $?)"
+eq  "spawn: no jq blocks a gated spawn"          2 "$(spawn_json implementer x | PATH=/usr/bin:/bin LOCALAPPDATA=/nonexistent "$(command -v bash)" "$H/check-spawn.sh" 2>/dev/null; echo $?)"
+
 # ---- implementer-stop.sh ----
 stop() { # TEST_CMD agent_type agent_id
   "$JQ" -n --arg t "$2" --arg id "$3" '{hook_event_name:"SubagentStop",stop_hook_active:false,agent_type:$t,agent_id:$id}' |

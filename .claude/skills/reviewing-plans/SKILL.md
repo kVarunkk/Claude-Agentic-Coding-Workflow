@@ -13,6 +13,7 @@ You are read-only. Do not edit the plan files. Report findings; the writer fixes
 ## 1. Load
 
 - Read the spec in full. In `tasks` mode, read the tasks file in full too.
+- Read `feature-<feature>-brief.md` if it exists. It holds what the user agreed.
 - Read the code the plan names (paths, modules, test setup) enough to check the plan's claims about it.
 
 ## 2. Mechanical checks (tasks mode)
@@ -21,6 +22,7 @@ Run from the repo root: `bash .claude/scripts/check-plan.sh plans/<feature>`. Ev
 
 ## 3. Self-review
 
+0. **Brief (spec mode).** Every brief decision, scope line, out-of-scope line and constraint is honoured. A spec line that contradicts the brief, or drops a brief decision, is P0. Behaviour the brief marks out of scope is P0. A decision the spec took that the brief never covered and that changes what gets built, without an Open question, is P1.
 1. **Testable.** Every REQ and SEC id is one statement with an exact value, and you can picture its test.
 2. **Coverage (tasks mode).** Every REQ and SEC id maps to a task whose Task text actually builds it, and every task maps to a spec id. The script checks ids; you check meaning.
 3. **Task scan (tasks mode).** Every Task cell allows one reasonable implementation and names its tests. No "handle edge cases".
