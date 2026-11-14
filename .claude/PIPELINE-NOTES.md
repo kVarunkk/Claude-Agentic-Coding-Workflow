@@ -97,6 +97,12 @@ Shape used by `check-spawn.sh`:
 - code-reviewer could not save its report through a Bash heredoc (permission prompt). It now has `Write`, limited by its prompt to `plans/<feature>/reports/`. Deviation from the plan's tool table.
 - Each hook writes its last stdin to `$TMPDIR/pipeline-last-<hook>.json` for debugging.
 
+## M5 additions
+
+- `scripts/status.sh <plan>` prints `spec:`, `tasks:`, `gate:` and `next:` lines so `/build-feature` resumes from script output instead of model judgment. Not in the original plan; tested in `test-scripts.sh`.
+- The approval commit is tagged `<feature>-tasks` so the first phase report has a diffstat base.
+- Phase-end Critical gaps become a fix unit (`N` plus the next free letter) written by a fresh task-writer, so `next-unit.sh` and `check-spawn.sh` stay consistent. One fix unit per phase, then the gate.
+
 ## Known limitations
 
 - Hooks cannot tell who ran `approve.sh`. Use the strict gate option (user runs `! bash .claude/scripts/approve.sh plans/<feature> phase-N`) when that matters.
