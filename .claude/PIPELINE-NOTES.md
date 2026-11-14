@@ -138,3 +138,37 @@ Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), the
 | 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply | |
 | 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` | |
 | 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task | |
+
+## Backlog (noted 2026-11-15, pick up next session)
+
+Nothing below is built yet. Change only this repo; resync the toy after.
+
+### B1. AFK mode (user request, design agreed in principle, not yet approved to build)
+
+The user approves once, then reviews only at the end of the whole feature.
+
+- Opt in at the tasks gate: a fourth option "Approve and run to the end (AFK)". It writes `approvals/afk`. Only the user's pick there creates it.
+- check-spawn.sh: with `approvals/afk`, skip the `approvals/phase-<prev>` check. All other checks stay (next unit, spec, tasks, brief).
+- Phase ends still run spec-matcher, the one automatic fix unit, the phase report and the tag. No gate; continue.
+- Final step: one review of all phase reports, the final conformance report and every unresolved finding. Options: Accept / Request changes / Roll back to a phase tag.
+- Still stops (does not ask, just stops; the next `/build-feature` resumes): a unit still red or with p0/p1 after MAX_LOOPS; a hook block; a phase still Critical after its fix unit.
+- Unattended runs need permission allow rules for TEST_CMD, git add/commit/tag and Write. Long runs may compact; state is in files.
+- Tests: hook allows phase N+1 without phase-N approval when `approvals/afk` exists; status.sh reports afk.
+
+### B2. Reports grouped by stage and phase (user request)
+
+All of a phase's reports live in one folder. Proposed layout:
+
+```
+plans/<feature>/reports/
+  spec/review.md, review-2.md            (spec-verifier)
+  tasks/review.md, review-2.md           (task-verifier)
+  phase-1/review-1a.md, review-1a-2.md   (code-reviewer, per unit)
+  phase-1/conformance.md, conformance-2.md (spec-matcher --phase 1)
+  phase-1/report.md                      (orchestrator phase report)
+  final/conformance.md                   (spec-matcher, whole feature)
+```
+
+- Dates go inside each report, not in the file name. Re-runs add `-2`, `-3`; nothing is overwritten (this also fixes spec-matcher replacing its first report when a fix unit runs).
+- Update: spec-verifier, task-verifier, code-reviewer, spec-matcher agents; reviewing-plans, reviewing-code, checking-spec-conformance skills; build-feature (phase report path, fix-unit report path, final links); PIPELINE-NOTES dry-run table.
+- Phase of a unit = unit id without its letter (`2a` -> `phase-2`).
