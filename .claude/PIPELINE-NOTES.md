@@ -122,22 +122,42 @@ Shape used by `check-spawn.sh`:
 
 ## Dry run (M6)
 
-Status: PENDING. Needs an interactive session (gates, restart, kill). Toy repo made by `bash tests/pipeline/make-toy.sh` at `../pipeline-toy` (Node CLI, `npm test`, `MAX_UNIT_TASKS=2` to force sub-phases). Refresh its pipeline files after changes with `bash tests/pipeline/make-toy.sh --sync`.
+Status: RUN 1 DONE 2026-11-15 (happy path end to end, 36 min, 6 units, 24 tests). Checks 3, 6 and 8 still untested. Needs an interactive session (gates, restart, kill). Toy repo made by `bash tests/pipeline/make-toy.sh` at `../pipeline-toy` (Node CLI, `npm test`, `MAX_UNIT_TASKS=2` to force sub-phases). Refresh its pipeline files after changes with `bash tests/pipeline/make-toy.sh --sync`.
 
 Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), then
 `/build-feature json-flag Add a --json flag to the greet CLI that prints {"greeting":"Hello, <name>"}, and an --upper flag that uppercases the greeting.`
 
 | # | Check | How | Result |
 |---|---|---|---|
-| 0 | alignment: interview in rounds, brief written, consensus question waits; spec-writer only after Agree | answer the questions, pick Agree. Optional: before agreeing, ask it to spawn spec-writer; the hook must block it | |
-| 1 | spec gate stops and waits; spec cites brief decisions | answer Approve | |
-| 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve | |
-| 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" | |
-| 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript | |
-| 5 | review fix loop via SendMessage | while a unit's implementer runs: `bash scripts/seed-defect.sh` in another terminal; reviewer flags it, the same implementer fixes it | |
-| 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply | |
-| 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` | |
-| 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task | |
+| 0 | alignment: interview in rounds, brief written, consensus question waits; spec-writer only after Agree | answer the questions, pick Agree. Optional: before agreeing, ask it to spawn spec-writer; the hook must block it || PASS. 1 plain-text why, 4 AskUserQuestion choices, brief D-01..D-07, Agree. Hook block before Agree not tried. |
+| 1 | spec gate stops and waits; spec cites brief decisions | answer Approve || PASS. Waited 3 times (user chose P2 fix rounds). Spec cites D-ids. |
+| 2 | tasks gate stops; plan has sub-phases (`2a`, `2b`) | read the units shown, Approve || PASS. Units 0, 1, 2a, 2b, 3. Verifier caught a real P1 (diff against working tree after commits). |
+| 3 | hook blocks a wrong spawn | at a gate pick Stop, then ask: "spawn the implementer for the last unit now, PLAN/UNIT form" || NOT TESTED. |
+| 4 | one fresh implementer per unit | one `implementer` spawn per unit line in the transcript || PASS. One implementer per unit (0, 1, 2a, 2b, 2c, 3). |
+| 5 | review fix loop via SendMessage | while a unit's implementer runs: `bash scripts/seed-defect.sh` in another terminal; reviewer flags it, the same implementer fixes it || PASS without seeding. Unit 1 reviewer caught `'back\slash'` (no backslash); same implementer fixed it via SendMessage; re-review saved as `-2`. |
+| 6 | Stop hook keeps implementer working while red | while an implementer runs: `bash scripts/seed-red.sh`; check `$TMPDIR/pipeline-last-implementer-stop.json` and the reply || NOT TESTED (tests never red). SubagentStop did fire: capture file from the toy session exists. |
+| 7 | phase report written, phase gate waits | `plans/json-flag/reports/phase-N-report.md`, tag `json-flag-phase-N` || PASS. Reports, tags and gates for phases 0 to 3. Request changes at phase 2 added fix unit 2c. |
+| 8 | resume after kill | kill the session mid-unit, restart, rerun `/build-feature json-flag`; it resumes at the first unticked task || NOT TESTED. |
+
+### Run 1 findings (2026-11-15)
+
+Worked: every gate waited; reviewers caught two real defects (unit 1 test literal, TASK-030 empty diff); SendMessage resume worked for spec-writer, task-writer and implementer; phase Request changes path worked; 6 commits plus 5 tags, nothing pushed.
+
+Defects and friction, to fix (R-ids):
+- R1. Plan verifiers returned findings inline only. FIXED in ec6460d.
+- R2. Brief committed with `status: draft`; the orchestrator flipped it to `agreed` after the commit (it rode along in the tasks commit). Fix: aligning-requirements sets `status: agreed` before approve.sh, or the commit step does.
+- R3. Verify-only units (0 Baseline, 3 Ship) cost an implementer, a reviewer, a matcher and a gate each for no code. Fix: writing-tasks forbids units without code; the baseline is the orchestrator's pre-loop test run and the ship check is step 5.
+- R4. P2 loops do not converge: each fresh spec-verifier found 3 or 4 new P2 wording notes (3 rounds). The orchestrator also recommended fixing P2s. Fix: the gate recommends Approve when p0 and p1 are 0; a re-verify after a fix round checks only the fixed findings plus new p0/p1.
+- R5. Phase fix unit (2c) was added by the task-writer and built without a task-verifier or the user seeing the unit. The writer also edited traceability and decisions outside the unit despite "Change nothing else". Fix: run check-plan plus task-verifier on the new unit, and show it at a short gate (or fold into the phase gate).
+- R6. `json-flag-phase-2` tag was moved (force) after the fix unit; first `conformance-phase-2.md` was overwritten. Fix: B2 numbering; tag policy (never move a tag; tag only after the phase is approved).
+- R7. SUMMARY semantics differ: in reviews p1 means likely wrong code and fails the verdict; in conformance p1 means Warning (incl. "inspected only") and passes. The final report showed p1 3 with verdict pass for untestable guidelines. Fix: conformance maps Warning to p2, or adds a separate `warn:` count.
+- R8. Guard and mutation claims are self-reported. Reviewers said "I did not run the mutation checks". Implementer skipped proving the backslash test can go red. Fix: reviewer reruns one named mutation per guard task (cheap), per pstack "verdict from an agent that did not write it".
+- R9. Unit commits use `git add -A` and swept the untracked review report into `feat:` commits. Works, but see B3 item 2 (stage-unit.sh).
+- R10. 10 user gates for a 6-unit toy feature (brief, spec x3, tasks, phase 0, 1, 2 x2, 3). Supports B1 (AFK) and R3.
+- R11. User's global SessionStart hook fails in Git Bash (`powershell: command not found`). Not ours; tell the user.
+- Good unplanned behaviour to keep: the orchestrator ran the real CLI at the end (`greet --name Ada --json --upper`). Make it a step (pstack "tests alone are not sufficient").
+
+Next dry run (run 2): checks 3, 6, 8 plus R2 to R8 fixes. Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit.
 
 ## Backlog (noted 2026-11-15, pick up next session)
 
