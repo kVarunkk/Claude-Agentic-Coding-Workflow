@@ -95,6 +95,7 @@ Shape used by `check-spawn.sh`:
 - Real stdin of the implementer frontmatter Stop hook: `hook_event_name: "SubagentStop"`, `agent_type: "implementer"`, `agent_id`, `stop_hook_active`, `agent_transcript_path`, `last_assistant_message`, `background_tasks`, `session_crons`. Confirms sections 2 and 4.
 - Live block works: a wrong `implementer` spawn in this session was refused with the check-spawn reason shown to the model.
 - code-reviewer could not save its report through a Bash heredoc (permission prompt). It now has `Write`, limited by its prompt to `plans/<feature>/reports/`. Deviation from the plan's tool table.
+- M6 feedback: spec-verifier returned P2 findings inline only, so they were lost after the gate. spec-verifier and task-verifier now have `Write` (report only) and save `reports/spec-review-<date>.md` / `reports/tasks-review-<date>.md` (`-2`, `-3` on re-review); `report:` carries the path. Deviation from the plan's "read-only" verifiers.
 - Each hook writes its last stdin to `$TMPDIR/pipeline-last-<hook>.json` for debugging.
 
 ## M5 additions

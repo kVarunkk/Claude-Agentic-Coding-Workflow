@@ -8,7 +8,7 @@ argument-hint: "spec|tasks plans/<feature>"
 
 Target: **$ARGUMENTS**. Mode `spec` reviews `feature-<feature>-spec.md`. Mode `tasks` reviews `feature-<feature>-tasks.md` against the spec.
 
-You are read-only. Do not edit the plan files. Report findings; the writer fixes them.
+Do not edit the plan files. Report findings; the writer fixes them. The only file you write is your report.
 
 ## 1. Load
 
@@ -49,9 +49,11 @@ Re-read the exact plan lines for each finding and drop what does not hold up.
 - **P1**: will likely produce wrong code: an ambiguous requirement, a task that decides nothing, a wrong dependency, a missing edge case that hurts users.
 - **P2**: cost or clarity: naming drift, a WARN from the script, proportion.
 
-## 6. Reply
+## 6. Report and reply
 
-List findings as `F01 [P1] <file>:<line> <problem>. Fix: <smallest change>.` Then end with this block and nothing after it:
+Save the report to `plans/<feature>/reports/<mode>-review-<YYYY-MM-DD>.md`, with suffix `-2`, `-3` if that file exists. It holds the target, the date, every finding, and the SUMMARY block. List findings as `F01 [P1] <file>:<line> <problem>. Fix: <smallest change>.`
+
+Reply with the same findings, then end with this block and nothing after it:
 
 ```
 SUMMARY
@@ -61,7 +63,7 @@ p1: <n>
 p2: <n>
 top:
 - <one line per top finding, max 5>
-report: inline
+report: plans/<feature>/reports/<mode>-review-<date>.md
 ```
 
 `verdict` is `fail` when p0 or p1 is above 0.

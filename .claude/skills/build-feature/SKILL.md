@@ -57,14 +57,14 @@ Reach consensus with the user on what gets built. Invoke the `aligning-requireme
    ```
 2. **Verify.** Spawn `spec-verifier`: `spec plans/<feature>`.
 3. **Fix loop.** If the SUMMARY has p0 or p1 above 0: `SendMessage` the same spec-writer with the `top:` lines, then verify again with a new spec-verifier. At most `MAX_LOOPS` rounds. If the writer's ID is gone (new session), spawn a new spec-writer (same prompt plus the findings). Still failing: show the user the remaining `top:` lines at the gate.
-4. **Gate.** Show the spec path, its open questions, and any place it departs from the brief. Approve: `bash .claude/scripts/approve.sh PLAN spec`. Request changes: resume the spec-writer with the user's text, then go to 2. If the change contradicts a brief decision, update the brief first (step 1, Change something).
+4. **Gate.** Show the spec path, the verifier report path (`report:` line), its open questions, and any place it departs from the brief. Approve: `bash .claude/scripts/approve.sh PLAN spec`. Request changes: resume the spec-writer with the user's text, then go to 2. If the change contradicts a brief decision, update the brief first (step 1, Change something).
 
 ## 3. Tasks
 
 1. **Write.** Spawn `task-writer`: `PLAN: plans/<feature>. Write the tasks file from the approved spec.`
 2. **Verify.** Run `bash .claude/scripts/check-plan.sh PLAN` yourself, then spawn `task-verifier`: `tasks plans/<feature>`.
 3. **Fix loop.** Same as 2.3, with the task-writer and task-verifier. A FAIL from check-plan counts as p0.
-4. **Gate.** Show the units in order with their task ids. Approve: `approve.sh PLAN tasks`, then commit the plan: `git add PLAN && git commit -m "docs(<feature>): spec and tasks approved"` and `git tag <feature>-tasks`.
+4. **Gate.** Show the units in order with their task ids and the verifier report path. Approve: `approve.sh PLAN tasks`, then commit the plan: `git add PLAN && git commit -m "docs(<feature>): spec and tasks approved"` and `git tag <feature>-tasks`.
 
 ## 4. Unit loop
 
