@@ -79,7 +79,7 @@ approve demo phase-1
 # Fix rounds: a fresh implementer for the unit still open at HEAD.
 F() { printf 'PLAN: plans/%s\nUNIT: %s\nFIX: %s\nFix the findings.' "$1" "$2" "$3"; }
 mkdir -p "$PROJ/plans/demo/reports/phase-2"; echo "F01" > "$PROJ/plans/demo/reports/phase-2/review-2a.md"
-sed -i 's/\(| TASK-021 |.*\)| \[ \] | |$/\1| [x] | 2026-11-15 |/' "$PROJ/plans/demo/feature-demo-tasks.md"
+sedi 's/\(| TASK-021 |.*\)| \[ \] | |$/\1| [x] | 2026-11-15 |/' "$PROJ/plans/demo/feature-demo-tasks.md"
 RV=plans/demo/reports/phase-2/review-2a.md
 eq  "fix: unit built but uncommitted allowed"    0 "$(spawn implementer "$(F demo '2a: TASK-021' "$RV")")"
 eq  "fix: plain spawn of 2a now blocked"         2 "$(spawn implementer "$(P demo '2a: TASK-021')")"

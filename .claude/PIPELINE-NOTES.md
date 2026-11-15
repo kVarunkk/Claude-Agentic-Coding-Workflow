@@ -11,12 +11,12 @@ Findings that the build pipeline relies on. Docs base: https://code.claude.com/d
 | bash | GNU bash 5.2.12 (Git for Windows, msys) |
 | jq | not installed at start; installed with `winget install jqlang.jq`. Running sessions keep the old PATH, so `scripts/lib.sh` falls back to the WinGet package path. |
 | Claude Code | 2.1.325 |
-| TEST_CMD | `npm test` (user choice; matches chat-agent CON-005) |
+| TEST_CMD | `npm test` (user choice; set per project in `pipeline.conf`) |
 
 ## Decisions taken with the user (M0 to M1)
 
 - Tasks table is `| ID | Task | Spec | Files | Status | Done |` (plan 3.1 plus a Spec column). Scripts find columns by header name.
-- `plans/chat-agent` stays in the old format. The pipeline is built and tested on fixtures and the M6 toy feature only.
+- The pipeline is built and tested on fixtures and the M6 toy feature only. (`plans/chat-agent` moved to the separate web-agent repo on 2026-11-16, when this repo became pipeline-only.)
 
 ## 1. PreToolUse on the Agent tool (hooks.md, "tool_input fields" > Agent)
 

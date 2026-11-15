@@ -150,7 +150,7 @@ eq  "branch: back on default checks out existing" "branch: feature/demo (from ma
 
 # status.sh: uncommitted unit and AFK gate
 eq  "status: nothing built yet"        "uncommitted: none;" "$(g bash "$S/status.sh" plans/demo | tr '\n' ';' | grep -oE 'uncommitted: [^;]*;')"
-g sed -i "$(tick TASK-021)" plans/demo/feature-demo-tasks.md
+g sedi "$(tick TASK-021)" plans/demo/feature-demo-tasks.md
 eq  "status: 2a ticked, not committed" "uncommitted: 2a;" "$(g bash "$S/status.sh" plans/demo | tr '\n' ';' | grep -oE 'uncommitted: [^;]*;')"
 eq  "status: next moves on to 2b"      "next: 2b: TASK-022 TASK-023;" "$(g bash "$S/status.sh" plans/demo | tr '\n' ';' | grep -oE 'next: [^;]*;')"
 g git checkout -q -- plans/demo
@@ -170,7 +170,7 @@ echo z > "$R/src/other.ts"
 eq  "stage-unit: stray file blocks"    1 "$(g bash "$S/stage-unit.sh" plans/demo 2b >/dev/null 2>&1; echo $?)"
 has "stage-unit: names the stray file" "src/other.ts" "$(g bash "$S/stage-unit.sh" plans/demo 2b 2>&1)"
 eq  "stage-unit: nothing staged on block" "" "$(g git diff --cached --name-only)"
-g sed -i 's#^None yet\.$#- TASK-022 (REQ-003): also touched src/other.ts for a shared helper.#' plans/demo/feature-demo-tasks.md
+g sedi 's#^None yet\.$#- TASK-022 (REQ-003): also touched src/other.ts for a shared helper.#' plans/demo/feature-demo-tasks.md
 eq  "stage-unit: stray logged under Differences is allowed" 0 "$(g bash "$S/stage-unit.sh" plans/demo 2b >/dev/null 2>&1; echo $?)"
 eq  "stage-unit: unknown unit fails"   1 "$(g bash "$S/stage-unit.sh" plans/demo 9 >/dev/null 2>&1; echo $?)"
 
@@ -218,9 +218,9 @@ add_unit() { # awk inserting a unit before the line matching $1
 add_unit '^## Phase 3:' 2c
 eq  "fix-unit: clean addition passes"  0 "$(fu check 2c >/dev/null; echo $?)"
 eq  "fix-unit: counts the auto-fix unit" "1" "$(fu count 2)"
-sed -i 's/^| REQ-001 | TASK-011 |$/| REQ-001 | TASK-011 |\n| SEC-001 | TASK-021, TASK-024 |/' "$T"
+awk '{ print } /^\| REQ-001 \| TASK-011 \|$/ { print "| SEC-001 | TASK-021, TASK-024 |" }' "$T" > "$T.new" && mv "$T.new" "$T"
 eq  "fix-unit: traceability rows allowed" 0 "$(fu check 2c >/dev/null; echo $?)"
-sed -i 's/| TASK-023 | Document flags./| TASK-023 | Document all flags./' "$T"
+sedi 's/| TASK-023 | Document flags./| TASK-023 | Document all flags./' "$T"
 eq  "fix-unit: edited old unit fails"  1 "$(fu check 2c >/dev/null; echo $?)"
 has "fix-unit: names the changed unit" "changed section: ## Phase 2b: Name" "$(fu check 2c)"
 g git checkout -q -- plans/demo

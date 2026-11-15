@@ -10,6 +10,8 @@ has() { # name needle haystack
     *) FAILED=$((FAILED + 1)); printf 'FAIL %s\n     missing: %s\n     in:      %s\n' "$1" "$2" "$3" ;;
   esac
 }
+# sedi <script> <file>: in-place sed that works with GNU and BSD (macOS) sed alike.
+sedi() { sed "$1" "$2" > "$2.sedi" && mv "$2.sedi" "$2"; }
 done_tests() {
   printf '\n%d passed, %d failed\n' "$PASS" "$FAILED"
   [ "$FAILED" -eq 0 ]
