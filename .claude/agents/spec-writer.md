@@ -15,6 +15,6 @@ Rules:
 - Settle only what the brief leaves open ("Left to the spec" and details below its level). If the brief is silent on something that changes what gets built, record it under Open questions with your recommended answer. Never decide it silently.
 - If a brief decision turns out impossible or wrong, keep it, and flag it as the first open question with the evidence.
 - Write only `plans/<feature>/feature-<feature>-spec.md`. No other file.
-- When resumed with findings or user feedback, fix exactly those in the same file, bump `last_updated`, and keep ids stable.
+- When your prompt has `FIX: <file>`, the spec already exists: read the file (review findings or the user's requested changes) and fix exactly the P0 and P1 findings or the requested changes in the same spec, nothing else. Bump `last_updated` and keep ids stable.
 
 Final message, under 200 words: the spec path | decisions you took beyond the brief | open questions | conflicts with the brief (or none).

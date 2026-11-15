@@ -38,12 +38,13 @@ List the domain features the changed code handles, in the domain's own terms. Fo
 
 Work through the lenses in [references/lenses.md](references/lenses.md), tests first:
 
-1. **Tests.** For each test of changed behaviour, ask what wrong implementation would still pass it. When a distinguishing input is cheap, write it as a probe script in the scratchpad (or `$TMPDIR`) and run it with the project's runner. Keep the output as evidence.
+0. **Gate integrity.** The author wants green, so anything that loosens a gate needs proof. Flag: a test deleted, skipped (`.skip`, `xit`, `@pytest.mark.skip`) or with relaxed asserts; snapshots changed without their behaviour; lint, type or CI config relaxed; exceptions swallowed; coverage or timeout thresholds lowered. Each is P0 (P1 if the reason is logged and plausible). Never auto-fix these.
+1. **Tests.** For each test of changed behaviour, imagine two edits: break the behaviour (does the test fail?) and change only internals (does it still pass?). A test that fails either is weak. Ask what wrong implementation would still pass it. When a distinguishing input is cheap, write it as a probe script in the scratchpad (or `$TMPDIR`) and run it with the project's runner. Keep the output as evidence.
 2. **Data shape.** Look for structures that can hold invalid states, information stored twice and kept in sync by hand, and cases you can only extend by grepping.
 3. **Correctness.** Partition by partition.
 4. **Security.** Apply whenever the change reads untrusted input, makes an access or policy decision, or handles secrets.
-5. **Spec alignment.** Missing or partial requirements, behaviour nobody asked for, contradicted decisions.
-6. **Design and standards.** Project rules first, then the smell baseline.
+5. **Spec alignment and scope.** Missing or partial requirements, behaviour nobody asked for, contradicted decisions. When the change belongs to a task unit: every changed file is in the unit's Files column or logged under Differences, and there is no unrequested refactor or behaviour. Anything else is scope drift (P1).
+6. **Design and standards.** Project rules first, then the smell baseline. Cleanup: comments that restate the code (keep license headers, external constraints, public API docs, issue links and a non-obvious why), try/catch or defensive checks on trusted paths, casts that dodge types, deep nesting. P2 unless they hide a bug.
 7. **Performance and operations.**
 
 Review the change itself. Flag pre-existing problems only on lines the diff touches or makes worse. Leave what a linter, formatter or type checker already enforces.
@@ -51,6 +52,17 @@ Review the change itself. Flag pre-existing problems only on lines the diff touc
 For each confirmed defect, hunt its variants: other paths into the same code, and sibling sites that handle the same feature.
 
 **Large or risky change** (2+ modules, >300 changed lines, a security boundary, or `--deep`): offer the parallel path in [references/parallel-review.md](references/parallel-review.md). Read-only lens reviewers run in parallel and you synthesize their findings.
+
+## 4b. Prove the guards
+
+Do not trust "the test fails without the code"; run it. For each task whose tests guard a behaviour (a validation, an escape, a limit, an error path), make one named mutation that breaks that behaviour **in a scratch copy, never in the repo** (`bash .claude/scripts/scratch-copy.sh "$TMPDIR/mut-<scope>"` in a pipeline repo, else a copy under the scratchpad). Run the project's test command there. Expect red.
+
+- Record each as `mutation: <what you broke> -> <test> red|green`.
+- A guard test that stays green under its mutation is P1 (the test does not guard anything).
+- Cheap alternative for a new test: copy the tree at the base (`scratch-copy.sh <dir> --base <BASE>`), add the new test file, and show it fails there.
+- Delete the copy when done. One mutation per guard task is enough.
+
+**Recheck mode** (`RECHECK: <previous report>`): check each P0 and P1 finding of that report (`fixed` or `open`, with evidence), rerun its mutation, and look for new P0 or P1 problems in the lines the fix touched. Report no new P2s.
 
 ## 5. Verify
 
@@ -99,9 +111,11 @@ Q01: <question> Blocking: yes | no
 - **P2**: a design or maintainability cost that will hurt within weeks.
 - **P3**: a nit; the author decides.
 
-Ids (`F01`, `Q01`) stay stable through the follow-up discussion. One root cause is one finding. Omit empty sections. When the change belongs to a feature in `plans/`, also save the report as `plans/<feature>/reports/review-<scope>-<YYYY-MM-DD>.md` (scope is the unit id when there is one, e.g. `review-2a-2026-11-14.md`; add `-2`, `-3` for re-reviews the same day). That report file is the only file you write.
+Add a `### Guards` section with the mutation lines and a `Scope: clean | drift (<files or behaviour>)` line when the change belongs to a task unit.
 
-End every reply with this block and nothing after it. Count P3 into `p2`. `verdict` is `fail` when p0 or p1 is above 0.
+Ids (`F01`, `Q01`) stay stable through the follow-up discussion. One root cause is one finding. Omit empty sections. When the change belongs to a feature in `plans/`, also save the report: to the `REPORT:` path in your prompt, else `plans/<feature>/reports/phase-<N>/review-<unit>.md` (N is the unit id without its letter), else `plans/<feature>/reports/review-<scope>.md`; add `-2`, `-3` instead of overwriting. Put the date inside the report. That report file is the only file you write.
+
+End every reply with this block and nothing after it. Count P3 into `p2`. `verdict` is `fail` when p0 or p1 is above 0. `scope` is `n/a` outside a task unit.
 
 ```
 SUMMARY
@@ -109,6 +123,8 @@ verdict: pass|fail
 p0: <n>
 p1: <n>
 p2: <n>
+scope: clean|drift|n/a
+mutations: <n run>, <n still green>
 top:
 - <F-id> [P<n>] <file:line> <one line>   (max 5, most severe first)
 report: <path to the saved report, or inline>

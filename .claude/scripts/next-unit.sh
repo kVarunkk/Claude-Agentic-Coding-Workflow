@@ -8,9 +8,4 @@ set -u
 plan="${1:?usage: next-unit.sh <plan-dir>}"
 tasks=$(tasks_file "$plan") || exit 1
 parsed=$(parse_tasks "$tasks") || exit 1
-printf '%s\n' "$parsed" | awk -F'\t' '
-  $1 == "task" && $4 == "open" {
-    if (u == "") u = $2
-    if ($2 == u) ids = ids " " $3
-  }
-  END { if (u != "") print u ":" ids }'
+printf '%s\n' "$parsed" | next_unit_of

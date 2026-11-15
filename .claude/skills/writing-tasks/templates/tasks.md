@@ -42,6 +42,7 @@ The inputs and failure modes most likely to hurt a real user that no requirement
 
 ---
 
+<!-- Phase 0 only when the repo lacks a test runner or scaffold the tasks need; delete it otherwise. -->
 ## Phase 0: Scaffold and test infrastructure
 
 - **GOAL-000**: <a clean clone installs, runs and tests>
@@ -76,20 +77,12 @@ depends: 0
 
 | ID | Task | Spec | Files | Status | Done |
 |----|------|------|-------|--------|------|
-| TASK-015 | **Manual:** <what to run and what to record>. | RISK-…, Q-… | none | [ ] | |
+| TASK-015 | **Red → Green:** `<module>`. **Tests:** <cases>. Document the flag in README. | REQ-… | <src file>, <test file>, README.md | [ ] | |
+| TASK-016 | **Manual:** <what to run against TASK-015's code and what to record>. | RISK-…, Q-… | none | [ ] | |
 
 **Done when:** <checkable outcome>
 
----
-
-## Phase N: Ship
-
-depends: 1
-
-| ID | Task | Spec | Files | Status | Done |
-|----|------|------|-------|--------|------|
-| TASK-N0 | README / docs. | CON-… | README.md | [ ] | |
-| TASK-N1 | **Verify:** lint, typecheck, full test suite, a run from a clean clone. | CON-… | none | [ ] | |
+<!-- No Ship/Verify unit: the pipeline runs the full suite, a real run and the conformance check at the end. -->
 
 ## Requirement traceability
 

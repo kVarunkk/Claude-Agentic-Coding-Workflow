@@ -47,13 +47,15 @@ For each id:
 
 Code existing isn't evidence. If a test was skipped, or its assertions don't check the claim, the id drops to Inspected.
 
+**Run it for real.** When the spec names a runnable entry point with an example (a CLI command, a request, a script), run it once in the scratchpad and use the output as Verified evidence for the ids it shows. Tests alone are not the whole proof.
+
 **Statuses:**
 
 | Status | When | Severity |
 |---|---|---|
 | ✅ Met | does exactly what the id says; Tested or Verified | none |
-| 🧪 Untested | looks right, but Inspected only | Critical for REQ/SEC; Warning for GUD/PAT |
-| 🟡 Partial | some of the stated behaviour is there; name exactly what is missing | Warning (Critical for SEC) |
+| 🧪 Untested | looks right, but Inspected only | Critical for REQ/SEC; Warning for CON/GUD/PAT/TEST |
+| 🟡 Partial | some of the stated behaviour is there; name exactly what is missing | Major (Critical for SEC) |
 | ❌ Missing | nothing implements it | Critical |
 | ⚠️ Diverges | does something else, with no Differences entry | Critical |
 | 📝 Accepted | differs, but logged under Differences or Decisions taken | none |
@@ -74,20 +76,22 @@ For a large spec (40+ ids), offer to grade sections in parallel with read-only s
 
 ## 5. Report
 
-Write `plans/<feature>/reports/conformance.md` (with `--phase N`: `reports/conformance-phase-N.md`) as a dated snapshot, replacing the previous one. That report is the only file you write. Post the summary and the gaps in chat, then end with this block and nothing after it:
+Write the report to the `REPORT:` path from your prompt. Without one, use `plans/<feature>/reports/final/conformance.md` (with `--phase N`: `reports/phase-N/conformance.md`), adding `-2`, `-3` instead of overwriting an earlier one. That report is the only file you write.
+
+**Severity mapping**, the same as every pipeline SUMMARY (p0 and p1 fail, p2 never does): Critical → p0, Major → p1, Warning → p2. Unplanned public behaviour (see Scope) is Critical; unplanned internal behaviour and coverage smells are Warnings. Post the summary and the gaps in chat, then end with this block and nothing after it:
 
 ```
 SUMMARY
 verdict: pass|fail
 p0: <Critical count>
-p1: <Warning count>
-p2: 0
+p1: <Major count>
+p2: <Warning count>
 top:
 - <id> <status> <one line>   (max 5, Critical first)
-report: plans/<feature>/reports/conformance[-phase-N].md
+report: <the report path>
 ```
 
-`verdict` is `fail` when p0 is above 0.
+`verdict` is `fail` when p0 or p1 is above 0.
 
 ```
 ---
@@ -107,7 +111,12 @@ mode: full | diagnostic (suite failing) | phase N
 ## Critical
 - **REQ-014** ⚠️ Diverges: spec: at most 5 turns; `lib/memory/recall.ts:88` returns 10. No Differences entry.
 
+## Major
 ## Warnings
+## Real run
+<command and output, or "the spec names no runnable example">
+## Attention
+<only with DECISIONS: in the prompt>
 ## Not in the spec
 ## Contracts (data model, API, config)
 ## Tasks file
@@ -117,6 +126,8 @@ mode: full | diagnostic (suite failing) | phase N
 ```
 
 Omit empty sections.
+
+**Attention** (when the prompt has `DECISIONS: <decisions.tsv>`, an unattended run): read the decision trail and list, most important first, what the user must look at before accepting: fix rounds that did not converge, units committed with open findings, added units, skipped steps, accepted Differences that change behaviour, anything decided without the user. One line each, with the row's step and evidence. You did not do this work; judge it as an outsider.
 
 ## 6. Next steps
 

@@ -10,6 +10,10 @@ Target: **$ARGUMENTS**. Mode `spec` reviews `feature-<feature>-spec.md`. Mode `t
 
 Do not edit the plan files. Report findings; the writer fixes them. The only file you write is your report.
 
+**Narrower modes** (from the pipeline prompt):
+- `RECHECK: <previous report>`: a fix round ran. Check only (a) each P0 and P1 finding of that report, marked `fixed` or `open`, and (b) new P0 or P1 problems the fix introduced. Report no new P2s; carry the old P2s over unchanged. This makes fix rounds converge.
+- `UNIT: <id>` (tasks mode): review only that added unit: its tasks against the findings it was added for, the spec ids it cites, its Files, `depends:` and size, and the script output. Do not re-review the rest of the file.
+
 ## 1. Load
 
 - Read the spec in full. In `tasks` mode, read the tasks file in full too.
@@ -51,7 +55,7 @@ Re-read the exact plan lines for each finding and drop what does not hold up.
 
 ## 6. Report and reply
 
-Save the report to `plans/<feature>/reports/<mode>-review-<YYYY-MM-DD>.md`, with suffix `-2`, `-3` if that file exists. It holds the target, the date, every finding, and the SUMMARY block. List findings as `F01 [P1] <file>:<line> <problem>. Fix: <smallest change>.`
+Save the report to the `REPORT:` path from your prompt. Without one, use `plans/<feature>/reports/<mode>/review.md`, with suffix `-2`, `-3` if that file exists; never overwrite a report. It holds the target, the date, every finding, and the SUMMARY block. List findings as `F01 [P1] <file>:<line> <problem>. Fix: <smallest change>.` In recheck mode, list the previous findings first with `fixed` or `open`.
 
 Reply with the same findings, then end with this block and nothing after it:
 
@@ -63,7 +67,7 @@ p1: <n>
 p2: <n>
 top:
 - <one line per top finding, max 5>
-report: plans/<feature>/reports/<mode>-review-<date>.md
+report: <the report path>
 ```
 
-`verdict` is `fail` when p0 or p1 is above 0.
+`verdict` is `fail` when p0 or p1 is above 0. P2s never fail a verdict; they are notes for the user.

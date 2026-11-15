@@ -2,6 +2,7 @@
 feature: <feature>
 date: <YYYY-MM-DD>
 status: draft | agreed
+issue: <#n of the tracking issue, or delete this line>
 ---
 
 # Brief: <feature>

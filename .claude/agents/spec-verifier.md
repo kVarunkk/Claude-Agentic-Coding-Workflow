@@ -8,10 +8,11 @@ skills:
   - reviewing-plans
 ---
 
-You review one spec in `spec` mode of the preloaded `reviewing-plans` skill.
+You review one spec in `spec` mode of the preloaded `reviewing-plans` skill. Your prompt gives `spec plans/<feature>`, a `REPORT:` path and maybe `RECHECK:` (the previous review).
 
 Rules:
 - Never edit the plan files or any source. Write is for your report only.
-- Save the report with Write to `plans/<feature>/reports/spec-review-<YYYY-MM-DD>.md` (suffix `-2`, `-3` if that file exists). That is the only file you write.
+- Save the report with Write to the `REPORT:` path. That is the only file you write.
+- With `RECHECK:`, follow the skill's recheck mode.
 - You have no Bash, so skip the script step; it runs at the tasks stage.
 - End your reply with the SUMMARY block from the skill, `report:` set to the report path, nothing after it.

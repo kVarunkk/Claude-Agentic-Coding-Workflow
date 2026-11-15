@@ -19,6 +19,44 @@ load_conf() {
   MAX_UNIT_TASKS="${MAX_UNIT_TASKS:-5}"
   MAX_LOOPS="${MAX_LOOPS:-2}"
   TEST_CMD="${TEST_CMD-}"
+  MAX_FILE_KB="${MAX_FILE_KB:-500}"
+}
+
+# default_branch: origin/HEAD, else init.defaultBranch, main or master if that branch exists.
+default_branch() {
+  local b
+  if b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null); then
+    printf '%s\n' "${b#origin/}"; return 0
+  fi
+  for b in "$(git config --get init.defaultBranch 2>/dev/null)" main master; do
+    [ -n "$b" ] && git show-ref --verify --quiet "refs/heads/$b" && { printf '%s\n' "$b"; return 0; }
+  done
+  return 1
+}
+
+# next_unit_of: reads parse_tasks records on stdin, prints "<unit-id>: TASK-a TASK-b" for the
+# first unit with an open task (its open tasks only), or nothing.
+next_unit_of() {
+  awk -F'\t' '
+    $1 == "task" && $4 == "open" {
+      if (u == "") u = $2
+      if ($2 == u) ids = ids " " $3
+    }
+    END { if (u != "") print u ":" ids }'
+}
+
+# next_unit_at <plan-dir> [rev]: next unit of the tasks file as committed at rev (default HEAD).
+# Fails when git or the committed file is missing.
+next_unit_at() {
+  local plan="${1:?plan dir required}" rev="${2:-HEAD}" f tmp rc
+  f=$(tasks_file "$plan") || return 1
+  tmp=$(mktemp) || return 1
+  if ! git -C "$(dirname "$f")" show "$rev:./$(basename "$f")" > "$tmp" 2>/dev/null; then
+    rm -f "$tmp"; return 1
+  fi
+  parse_tasks "$tmp" 2>/dev/null | next_unit_of; rc=${PIPESTATUS[0]}
+  rm -f "$tmp"
+  return "$rc"
 }
 
 # jq may be installed but not yet on PATH in a running session (WinGet).

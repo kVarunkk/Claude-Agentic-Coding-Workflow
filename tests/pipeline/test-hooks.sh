@@ -25,6 +25,9 @@ approve demo spec tasks phase-1
 approve fresh spec tasks
 approve zero spec tasks
 approve done spec tasks phase-1 phase-2
+export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
+export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.com GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.com
+( cd "$PROJ" && git init -q -b master && git add -A && git commit -qm init && git checkout -q -b feature/demo )
 
 # ---- check-spawn.sh ----
 spawn_json() { # subagent_type prompt
@@ -65,8 +68,38 @@ eq  "spawn: phase-0 approval missing blocked"    2 "$(spawn implementer "$(P zer
 approve zero phase-0
 eq  "spawn: phase-0 approved allowed"            0 "$(spawn implementer "$(P zero '2a: TASK-021')")"
 
+# AFK: the previous phase approval is not needed.
+rm "$PROJ/plans/demo/approvals/phase-1"
+approve demo afk
+eq  "spawn: afk skips the phase approval"        0 "$(spawn implementer "$(P demo '2a: TASK-021')")"
+rm "$PROJ/plans/demo/approvals/afk"
+eq  "spawn: without afk it is needed again"      2 "$(spawn implementer "$(P demo '2a: TASK-021')")"
+approve demo phase-1
+
+# Fix rounds: a fresh implementer for the unit still open at HEAD.
+F() { printf 'PLAN: plans/%s\nUNIT: %s\nFIX: %s\nFix the findings.' "$1" "$2" "$3"; }
+mkdir -p "$PROJ/plans/demo/reports/phase-2"; echo "F01" > "$PROJ/plans/demo/reports/phase-2/review-2a.md"
+sed -i 's/\(| TASK-021 |.*\)| \[ \] | |$/\1| [x] | 2026-11-15 |/' "$PROJ/plans/demo/feature-demo-tasks.md"
+RV=plans/demo/reports/phase-2/review-2a.md
+eq  "fix: unit built but uncommitted allowed"    0 "$(spawn implementer "$(F demo '2a: TASK-021' "$RV")")"
+eq  "fix: plain spawn of 2a now blocked"         2 "$(spawn implementer "$(P demo '2a: TASK-021')")"
+eq  "fix: other unit blocked"                    2 "$(spawn implementer "$(F demo '2b: TASK-022 TASK-023' "$RV")")"
+has "fix: block names the unit in progress"      "only for the unit in progress (2a)" "$(cat "$TMP/err")"
+eq  "fix: missing FIX file blocked"              2 "$(spawn implementer "$(F demo '2a: TASK-021' plans/demo/reports/phase-2/nope.md)")"
+eq  "fix: FIX outside reports blocked"           2 "$(spawn implementer "$(F demo '2a: TASK-021' plans/demo/feature-demo-tasks.md)")"
+eq  "fix: FIX with .. blocked"                   2 "$(spawn implementer "$(F demo '2a: TASK-021' plans/demo/reports/../feature-demo-tasks.md)")"
+( cd "$PROJ" && git checkout -q -- plans/demo/feature-demo-tasks.md )
+
+# Default branch.
+( cd "$PROJ" && git checkout -q master )
+eq  "spawn: on the default branch blocked"       2 "$(spawn implementer "$(P demo '2a: TASK-021')")"
+has "spawn: block names branch.sh"               "branch.sh" "$(cat "$TMP/err")"
+( cd "$PROJ" && git checkout -q feature/demo )
+eq  "spawn: on the feature branch allowed"       0 "$(spawn implementer "$(P demo '2a: TASK-021')")"
+
 # ---- check-spawn.sh: spec-writer needs an agreed brief ----
 mkdir -p "$PROJ/plans/newfeat"
+printf -- '---\nfeature: newfeat\nstatus: draft\n---\n# Brief\n' > "$PROJ/plans/newfeat/feature-newfeat-brief.md"
 SW='PLAN: plans/newfeat
 Feature: newfeat. Brief: plans/newfeat/feature-newfeat-brief.md.'
 eq  "spec-writer: no brief approval blocked"     2 "$(spawn spec-writer "$SW")"
@@ -95,5 +128,28 @@ has "stop: block count restarted"           "Block 1 of 2" "$(cat "$TMP/err")"
 eq  "stop: other agent types ignored"       0 "$(stop false code-reviewer a3)"
 eq  "stop: counters are per agent"          2 "$(stop false implementer a4)"
 eq  "stop: empty TEST_CMD allows stop"      0 "$(PIPELINE_CONF=/dev/null stop '' implementer a5)"
+
+# ---- check-git.sh ----
+gitcmd() { "$JQ" -n --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}' |
+  bash "$H/check-git.sh" 2>"$TMP/err"; echo $?; }
+eq  "git: plain push allowed"               0 "$(gitcmd 'git push -u origin feature/x')"
+eq  "git: push --follow-tags allowed"       0 "$(gitcmd 'git push --follow-tags')"
+eq  "git: commit allowed"                   0 "$(gitcmd 'git commit -m "feat(x): unit 1"')"
+eq  "git: tag allowed"                      0 "$(gitcmd 'git tag x-phase-1')"
+eq  "git: annotated tag allowed"            0 "$(gitcmd 'git tag -a v1 -m "release"')"
+eq  "git: non-git command allowed"          0 "$(gitcmd 'npm test -- --force')"
+eq  "git: push --force blocked"             2 "$(gitcmd 'git push --force origin x')"
+has "git: block says why"                   "force push" "$(cat "$TMP/err")"
+eq  "git: push -f blocked"                  2 "$(gitcmd 'git push -f')"
+eq  "git: push -uf blocked"                 2 "$(gitcmd 'git push -uf origin x')"
+eq  "git: force-with-lease blocked"         2 "$(gitcmd 'git push --force-with-lease')"
+eq  "git: +refspec blocked"                 2 "$(gitcmd 'git push origin +x')"
+eq  "git: push --delete blocked"            2 "$(gitcmd 'git push origin --delete x')"
+eq  "git: push :ref blocked"                2 "$(gitcmd 'git push origin :x')"
+eq  "git: -C before push still checked"     2 "$(gitcmd 'git -C ../toy push --force')"
+eq  "git: amend blocked"                    2 "$(gitcmd 'git add -A && git commit --amend --no-edit')"
+eq  "git: tag -f blocked"                   2 "$(gitcmd 'git tag -f x-phase-2')"
+eq  "git: tag -d blocked"                   2 "$(gitcmd 'git tag -d x-phase-2')"
+eq  "git: second segment checked"           2 "$(gitcmd 'git status; git push --force')"
 
 done_tests

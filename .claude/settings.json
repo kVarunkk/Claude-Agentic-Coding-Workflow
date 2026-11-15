@@ -1,4 +1,18 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(bash .claude/scripts/*)",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git rev-parse *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git tag *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,6 +21,15 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-spawn.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-git.sh\""
           }
         ]
       }

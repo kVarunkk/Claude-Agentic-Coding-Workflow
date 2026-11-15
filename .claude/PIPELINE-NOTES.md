@@ -65,6 +65,8 @@ Shape used by `check-spawn.sh`:
 
 ## 6. SendMessage resume (sub-agents.md, "Resume subagents") [S]
 
+- Since 2026-11-15 the pipeline does not resume agents; every fix round is a fresh agent (see Decisions). Kept for reference.
+
 - `SendMessage` with `to: <agentId>` (or name) resumes a finished subagent with its context, no new `Agent` call, so `check-spawn.sh` never sees it.
 - Works within the session; after a restart, IDs may survive on resume of the same session, names only since v2.1.299. Pipeline treats resume after restart as unsupported: fixes go to a new implementer with the report path.
 - Explore and Plan agents cannot be resumed (not used here).
@@ -115,8 +117,9 @@ Shape used by `check-spawn.sh`:
 ## Known limitations
 
 - Hooks cannot tell who ran `approve.sh`. Use the strict gate option (user runs `! bash .claude/scripts/approve.sh plans/<feature> phase-N`) when that matters.
-- A finished subagent can be resumed only while its ID is in the orchestrator context. After a restart, fixes go to a new implementer with the review report as input.
-- `check-spawn.sh` parses the fixed `PLAN:` / `UNIT:` prompt lines. Keep that form verbatim in `/build-feature`.
+- `check-spawn.sh` parses the fixed `PLAN:` / `UNIT:` / `FIX:` prompt lines. Keep that form verbatim in `/build-feature`.
+- AFK resume edge: when a phase ends a second time (a Changes unit after its tag), `status.sh` in AFK mode sees the old tag and reports no gate; the in-loop phase-done check still runs the phase end. Only a crash in between would skip it.
+- `check-git.sh` reads commands token by token; a quoted commit message containing `push --force` can be a false block.
 - Agent teams change named-subagent launch. Keep them off.
 - Windows: hook commands are run with `bash "<path>"` because the project path has spaces.
 
@@ -143,132 +146,63 @@ Run: start `claude` in `../pipeline-toy` (trust the workspace so hooks run), the
 
 Worked: every gate waited; reviewers caught two real defects (unit 1 test literal, TASK-030 empty diff); SendMessage resume worked for spec-writer, task-writer and implementer; phase Request changes path worked; 6 commits plus 5 tags, nothing pushed.
 
-Defects and friction, to fix (R-ids):
+Defects and friction (R-ids), status as of 2026-11-15 session 2:
 - R1. Plan verifiers returned findings inline only. FIXED in ec6460d.
-- R2. Brief committed with `status: draft`; the orchestrator flipped it to `agreed` after the commit (it rode along in the tasks commit). Fix: aligning-requirements sets `status: agreed` before approve.sh, or the commit step does.
-- R3. Verify-only units (0 Baseline, 3 Ship) cost an implementer, a reviewer, a matcher and a gate each for no code. Fix: writing-tasks forbids units without code; the baseline is the orchestrator's pre-loop test run and the ship check is step 5.
-- R4. P2 loops do not converge: each fresh spec-verifier found 3 or 4 new P2 wording notes (3 rounds). The orchestrator also recommended fixing P2s. Fix: the gate recommends Approve when p0 and p1 are 0; a re-verify after a fix round checks only the fixed findings plus new p0/p1.
-- R5. Phase fix unit (2c) was added by the task-writer and built without a task-verifier or the user seeing the unit. The writer also edited traceability and decisions outside the unit despite "Change nothing else". Fix: run check-plan plus task-verifier on the new unit, and show it at a short gate (or fold into the phase gate).
-- R6. `json-flag-phase-2` tag was moved (force) after the fix unit; first `conformance-phase-2.md` was overwritten. Fix: B2 numbering; tag policy (never move a tag; tag only after the phase is approved).
-- R7. SUMMARY semantics differ: in reviews p1 means likely wrong code and fails the verdict; in conformance p1 means Warning (incl. "inspected only") and passes. The final report showed p1 3 with verdict pass for untestable guidelines. Fix: conformance maps Warning to p2, or adds a separate `warn:` count.
-- R8. Guard and mutation claims are self-reported. Reviewers said "I did not run the mutation checks". Implementer skipped proving the backslash test can go red. Fix: reviewer reruns one named mutation per guard task (cheap), per pstack "verdict from an agent that did not write it".
-- R9. Unit commits use `git add -A` and swept the untracked review report into `feat:` commits. Works, but see B3 item 2 (stage-unit.sh).
-- R10. 10 user gates for a 6-unit toy feature (brief, spec x3, tasks, phase 0, 1, 2 x2, 3). Supports B1 (AFK) and R3.
-- R11. User's global SessionStart hook fails in Git Bash (`powershell: command not found`). Not ours; tell the user.
-- Good unplanned behaviour to keep: the orchestrator ran the real CLI at the end (`greet --name Ada --json --upper`). Make it a step (pstack "tests alone are not sufficient").
+- R2. Brief committed as `status: draft`. FIXED: `approve.sh <plan> brief` sets `status: agreed` in the front matter (tested).
+- R3. Verify-only units (Baseline, Ship) cost a full unit each. FIXED: `check-plan.sh` fails a unit whose Files are all `none`; writing-tasks and its template drop Baseline/Ship; build-feature runs the baseline before the loop and the real run in step 5.
+- R4. P2 loops did not converge. FIXED: p2 never starts a fix round; gates recommend Approve when p0 and p1 are 0; re-verifies get `RECHECK: <previous report>` (old P0/P1 plus new P0/P1 only, no new P2s) in reviewing-plans and reviewing-code.
+- R5. Fix unit unverified, writer edited outside it. FIXED: `fix-unit.sh check <id>` compares with HEAD (only the new unit plus traceability rows may change; tested), task-verifier reviews it with `UNIT: <id>`, short gate unless AFK. Auto units are titled `Auto-fix ...` so `fix-unit.sh count` enforces one per phase.
+- R6. Tag moved, report overwritten. FIXED: tags only after the phase gate (AFK: after the report), never moved (`check-git.sh` blocks `tag -f/-d`); a phase that ends again gets `-phase-N-2`. Reports via `report-path.sh` never overwrite.
+- R7. SUMMARY semantics. FIXED: everywhere p0 and p1 fail and p2 never does. Conformance maps Critical to p0, Major (Partial) to p1, Warning to p2.
+- R8. Guard claims self-reported. FIXED: reviewing-code 4b runs one named mutation per guard task in a scratch copy (`scratch-copy.sh`); SUMMARY has `mutations:`; a guard still green is P1.
+- R9. `git add -A` swept files. FIXED: `stage-unit.sh` (B3.2).
+- R10. Too many gates. Addressed by R3, R4 and AFK mode (B1).
+- R11. User's global SessionStart hook fails in Git Bash (`powershell: command not found`). Not ours; the user fixes it.
+- Real run at the end: now build-feature step 5.2 and a Verified-evidence rule in checking-spec-conformance.
 
-Next dry run (run 2): checks 3, 6, 8 plus R2 to R8 fixes. Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit.
+Next dry run (run 2): checks 3, 6, 8, plus the new paths: AFK run end to end, a fresh-agent fix round (`FIX:` spawn), a `stage-unit.sh` stray stop (touch an extra file during a unit), the final gate and the PR step (needs a remote; else check it stops cleanly without one). Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit (expect `uncommitted: <unit>` on resume).
 
-## Backlog (noted 2026-11-15, pick up next session)
+## Decisions taken 2026-11-15 (session 2)
 
-Nothing below is built yet. Change only this repo; resync the toy after.
+- Fix loops spawn a **fresh agent** each round (user). The input file goes in a `FIX:` line; the user's text is written to a `<stage>/changes` or `guidance-<unit>` report first. No SendMessage resumes in the pipeline. check-spawn allows a `FIX:` implementer only for the unit still open at HEAD.
+- **AFK mode** is built (user).
+- One commit per unit (default; user unsure). Revisit if the commit story matters.
+- One PR per feature, at the end, after the final gate; ready unless final conformance p0 > 0 (default; user unsure). Stacked per-phase PRs not built.
+- Never amend; fixes are new commits (default; user unsure). Enforced by `check-git.sh`.
+- Pushing and opening a PR always ask, AFK too.
 
-### B1. AFK mode (user request, design agreed in principle, not yet approved to build)
+## Built 2026-11-15 (session 2)
 
-The user approves once, then reviews only at the end of the whole feature.
+- B1 AFK: tasks-gate option writes `approvals/afk`; check-spawn skips phase approvals; status.sh `afk:` line and AFK gate = phase complete but tag missing; stop-not-ask list; `log-decision.sh` trail `plans/<f>/decisions.tsv`; final matcher gets `DECISIONS:` and writes an Attention section; final gate Accept / Request changes / Roll back / Stop.
+- B2 reports: `report-path.sh <plan> <stage>/<name>` gives `reports/{spec,tasks,phase-N,final}/<name>.md`, then `-2`, `-3`. Every agent writes only its `REPORT:` path. Phase reports are written once at the phase end, not appended per unit.
+- B3: (1) `branch.sh` puts work on `feature/<f>`, check-spawn blocks implementers on the default branch; (2) `stage-unit.sh`; (3) `scan-staged.sh` (HIGH exit 1, MEDIUM exit 3, `--file` for the PR body, `scan:allow` opt-out); (4) gate integrity lens; (5) scope drift, `scope:` in SUMMARY; (6) base control via `scratch-copy.sh --base`; (7) TEST_CMD rerun at commit and in reports; (8) `check-git.sh` hook; (9) step 6 PR with the pstack body; (10) skipped.
+- pstack: implementer TDD guardrails and self-deslop; reviewer two-edit test check and comment keep-list; `patch-id.sh` so a commit carries exactly the reviewed patch; "never relax a check" and "broken pipeline: stop" rules.
+- `status.sh` new lines: `afk:`, `uncommitted:` (unit open at HEAD but fully ticked in the tree; resume at review), `final:`.
+- `.claude/settings.json`: Bash hook for check-git.sh; allow rules for pipeline scripts, `npm test`, git status/diff/log/rev-parse/add/commit/tag.
 
-- Opt in at the tasks gate: a fourth option "Approve and run to the end (AFK)". It writes `approvals/afk`. Only the user's pick there creates it.
-- check-spawn.sh: with `approvals/afk`, skip the `approvals/phase-<prev>` check. All other checks stay (next unit, spec, tasks, brief).
-- Phase ends still run spec-matcher, the one automatic fix unit, the phase report and the tag. No gate; continue.
-- Final step: one review of all phase reports, the final conformance report and every unresolved finding. Options: Accept / Request changes / Roll back to a phase tag.
-- Still stops (does not ask, just stops; the next `/build-feature` resumes): a unit still red or with p0/p1 after MAX_LOOPS; a hook block; a phase still Critical after its fix unit.
-- Unattended runs need permission allow rules for TEST_CMD, git add/commit/tag and Write. Long runs may compact; state is in files.
-- Tests: hook allows phase N+1 without phase-N approval when `approvals/afk` exists; status.sh reports afk.
+Not built: stacked per-phase PRs; two commits per unit (test, then code); PR babysitting (only on request, never merges).
 
-### B2. Reports grouped by stage and phase (user request)
+## What enforces each rule
 
-All of a phase's reports live in one folder. Proposed layout:
-
-```
-plans/<feature>/reports/
-  spec/review.md, review-2.md            (spec-verifier)
-  tasks/review.md, review-2.md           (task-verifier)
-  phase-1/review-1a.md, review-1a-2.md   (code-reviewer, per unit)
-  phase-1/conformance.md, conformance-2.md (spec-matcher --phase 1)
-  phase-1/report.md                      (orchestrator phase report)
-  final/conformance.md                   (spec-matcher, whole feature)
-```
-
-- Dates go inside each report, not in the file name. Re-runs add `-2`, `-3`; nothing is overwritten (this also fixes spec-matcher replacing its first report when a fix unit runs).
-- Update: spec-verifier, task-verifier, code-reviewer, spec-matcher agents; reviewing-plans, reviewing-code, checking-spec-conformance skills; build-feature (phase report path, fix-unit report path, final links); PIPELINE-NOTES dry-run table.
-- Phase of a unit = unit id without its letter (`2a` -> `phase-2`).
-
-### B3. Commit safety and PRs (user request; ideas taken from garrytan/gstack /ship and /review)
-
-Gaps today: units commit with `git add -A` on whatever branch is checked out (master here), nothing checks what gets staged, and there is no PR step.
-
-Borrow from gstack, adapted to our pipeline:
-
-1. **Feature branch.** Step 0 creates or checks out `feature/<feature>`. Refuse to run units on the default branch (gstack: "Ship from a feature branch."). Hook option: block implementer spawns when HEAD is the default branch.
-2. **Stage only what the unit owns.** Replace `git add -A` with a `stage-unit.sh <plan> <unit>` script: stage the unit's Files plus `PLAN`; list any other changed file and stop. A file outside Files is allowed only if the implementer logged it under Differences. Test with fixtures.
-3. **Secret and junk scan before each commit.** Scan the staged diff for keys, tokens, `.env`, large or binary files; a hit blocks the commit (gstack blocks HIGH secret hits and asks on MEDIUM).
-4. **Gate integrity in code review.** Our Stop hook pushes the implementer to make tests green, so the reviewer must flag weakened gates: a test deleted, skipped or with relaxed asserts, snapshots changed without their test, lint/CI config relaxed, swallowed exceptions. Always P0/P1, never auto-fixed. Add to reviewing-code.
-5. **Scope drift in code review.** Diff vs the unit's tasks: files not in Files, unrequested refactors, behaviour no task asked for. Output `Scope: clean | drift` in the SUMMARY.
-6. **Regression proof.** Optional: a new test must fail at BASE and pass at HEAD (gstack "base control"). Cheap for us since we record BASE.
-7. **No completion claim without fresh evidence.** Commit only after TEST_CMD ran green in this step (already true) and record the command and result in the phase report.
-8. **Never force-push, never amend, never commit to the default branch.** Put it in the build-feature rules.
-9. **PR at the end (new step 6).** Ask first (outward-facing). Push the branch, then `gh pr create` (update if one exists). Draft when any Critical/P0/P1 is open. Body: one-line summary, the brief's goal, Spec link, units and commits, Differences from the spec, final conformance SUMMARY, tests run, open findings, links to reports. `Closes #N` only when the final conformance has no gaps, else `Linked to #N`. Scan the body for secrets before posting.
-10. Skip for now: version bumps, CHANGELOG, coverage %, deploy/canary. Revisit if a real project needs them.
-
-#### B3 addendum: poteto's pstack (cursor/plugins, folder pstack), the user's main reference
-
-The X article itself could not be read (x.com 402, mirrors failed). Notes are from the repo: README, `skills/poteto-mode/SKILL.md`, `playbooks/opening-a-pr.md`, `skills/principle-sequence-verifiable-units/SKILL.md`. deslop and no-comments were not read.
-
-Take from pstack:
-- **Worktree off main.** "Work from a git worktree off main. Subagents inherit it." Fits item 1 and M7. A dirty branch with unrelated work: patch it out, fresh worktree, apply.
-- **One PR per phase, stacked.** "Prefer five narrow PRs to one large PR." Phase 1 PR targets main; phase 2 branches from phase 1's tip and targets it. Our phases already end green with a report and a tag, so each phase gate can open its PR. Replaces item 9's single PR (AFK mode: open them all at the end).
-- **Commits tell the story.** "Each commit lands on its own and the sequence reads as an argument." Canonical shape: failing test commit, then the fix. Option: implementer commits stay one per unit (current), or split test and code into two commits per unit. Decide with the user.
-- **PR body is a one-minute briefing, under ~40 lines**, headings in order, empty ones dropped: `## Why` (opens with the user's goal, from the brief), `## What changed`, `## Scope` (always), `## Tradeoffs`, `## Blast Radius`, `## Verification` (real run paths and results). SHAs, verdicts and long lists go in linked files (our `reports/`), not the body. Prefer this over gstack's long body.
-- **Titles** `type(scope): subject`, no trailing period. Our commits already follow this.
-- **Cleanup pass before commit / review** (deslop, no-comments): strip AI slop and needless comments from the diff. Add as a reviewer check, not a separate agent.
-- **Always pause for irreversible writes**: force-push to shared branches, deploys, data deletion, messages. Pushing and opening PRs ask the user first, also in AFK mode.
-- **Broken pipeline skill mid-task**: fix it separately; don't silently work around it.
-
-Conflicts between gstack and pstack, to decide with the user:
-- Draft vs ready: gstack opens a draft while findings are open; pstack opens every PR ready. Proposal: ready when the phase gate passed, draft only with open Critical/P0.
-- Amending: pstack amends a just-made commit when the fix belongs in it; gstack never force-pushes. Proposal: amend only unpushed commits; never rewrite pushed history.
-- pstack has no staged-file check. Keep our own `stage-unit.sh` (item 2) and the gate-integrity review (item 4) from gstack.
-
-#### B3 addendum 2: full read of pstack (2026-11-15)
-
-Read in full: poteto-mode SKILL.md; playbooks opening-a-pr, shipping, babysit, feature, bug-fix, refactoring, multi-phase-plan, autonomous-run, autopilot-full, autopilot-stack, orchestrate, pause-safely, session-pickup, worktree-cleanup, references/bugbot-triage; skills deslop (cursor-team-kit), no-comments + agent comment-sicko, tdd, blast-radius, correct, interrogate, swarm, figure-it-out, technical-writing, unslop, show-me-your-work; all principle-* skills; docs/harness/claude-code.md, docs/guide/06 and 07. Descriptions only: how, why, architect, arena, reflect, recall, teach, ketchup, statechart, verification-skill generators, benchmark-checklist, the perf/forensics/eval/prototype/visual-parity playbooks. Not read: automations/benny, other guide pages.
-
-Ideas worth taking, by where they land:
-
-Implementer (before it stops):
-- deslop its own diff: drop needless comments, abnormal try/catch or defensive checks on trusted paths, casts that dodge types, deep nesting. Behaviour unchanged.
-- tdd guardrails, verbatim: "Do not change tests merely to match a wrong implementation." "Do not weaken existing assertions unless the expected behavior has genuinely changed and the reason is clear." Run the new test before the code and confirm it fails for the intended reason.
-
-Code reviewer:
-- Gate integrity (from gstack) plus pstack autopilot-full step 6: anything that loosens a gate needs proof, "because the owner is the one who wants green".
-- Test quality by two imagined edits (principle-test-behavior-not-implementation): break the behaviour, does the test fail? change internals only, does it still pass? Flag tests that fail either.
-- Comments: keep only a non-obvious why the code cannot show (comment-sicko keep-list: license headers, external constraints, public API docs, issue links).
-- Findings need evidence a run can reproduce (interrogate: "only findings proven by a run survive").
-- Optional for risky units: blast-radius, "find the one fact it's safe because of" and prove it by running code.
-
-Orchestrator commit step:
-- A verdict covers a patch. Record `git diff BASE | git patch-id` at review time; commit only if the staged patch-id matches, else re-review (shipping step 3). Cheap structural check that nothing changed after review.
-- Commit order tells the story: failing test, then the fix (bug-fix step 5). Optional per unit.
-- Commit and PR text through technical-writing + unslop rules (we already ban em dashes; unslop also bans mid-sentence colons and filler).
-
-PRs (extends item 9):
-- One PR per phase, stacked; root targets main; open ready, not draft; body sections Why / What changed / Scope / Tradeoffs / Blast Radius / Verification, under ~40 lines; details linked to reports/.
-- Babysitting a PR starts only when the user asks; it never merges. Landing is separate: only a verified contiguous run from the bottom, one PR at a time, read back the merge state.
-- Green CI is not a verdict. Only an agent that did not write the code gives one (we already split implementer and reviewer).
-
-Verification:
-- "Tests alone are not sufficient verification." Spec-matcher (or a phase step) should run the real artifact, e.g. the CLI command from the spec, and paste the output.
-- Verdicts are VERIFIED / NOT VERIFIED / INCONCLUSIVE; inconclusive is not a pass.
-
-AFK mode (B1):
-- Decision trail per show-me-your-work: append-only `plans/<feature>/decisions.tsv` (ts, phase, decision, why, evidence, result), one row per unit and decision; the final review ends with an "Attention" section from a reviewer that did not do the work.
-- Exit condition as a checkable predicate; never relax it to declare victory (never edit the spec or tests to pass).
-- Pause safely: on stop, finish or back out of the current step, commit `wip:`, write a resume note. Our status.sh already covers pickup.
-- "Always pause" list: force-push, deploys, data deletion, external messages. Pushing and PRs ask the user.
-
-Process:
-- encode-lessons-in-structure and /correct: a rule enforced by a hook or script beats prose. Keep a table in PIPELINE-NOTES pairing each pipeline rule with what enforces it (hook, script, prompt only).
-
-Tension with our design, decide with the user:
-- pstack prefers fresh subagents over resuming ("Interrupt-chained resumes silently drop directives"). Our fix loops resume the same writer/implementer via SendMessage. Option: fresh agent per fix round with the consolidated brief (original prompt + findings + prior report).
-- pstack does not check which files get staged; it relies on a clean worktree per task. Keep stage-unit.sh.
+| Rule | Enforced by |
+|---|---|
+| No spec before the brief is agreed | hook check-spawn.sh |
+| Implementer gets exactly the next unit | hook check-spawn.sh + next-unit.sh |
+| Fix rounds only for the unit in progress | hook check-spawn.sh (`FIX:` + HEAD tasks file) |
+| Phase N+1 only after phase N approved (unless AFK) | hook check-spawn.sh |
+| No unit work on the default branch | hook check-spawn.sh; branch.sh |
+| Implementer stops only when green | hook implementer-stop.sh |
+| No verify-only units, unit size, grammar | script check-plan.sh |
+| Brief committed as agreed | script approve.sh |
+| Commit only the unit's files | script stage-unit.sh |
+| Commit exactly the reviewed patch | script patch-id.sh (prompt compares) |
+| No secrets or junk committed or in the PR body | script scan-staged.sh (prompt runs it) |
+| Added unit changes nothing else | script fix-unit.sh check |
+| One auto-fix unit per phase | script fix-unit.sh count (prompt reads it) |
+| Reports never overwritten | script report-path.sh (agents write the given path) |
+| No force-push, amend, tag move or delete | hook check-git.sh |
+| Only the user answers gates | prompt only (hooks cannot tell who ran approve.sh; strict gate option) |
+| Fresh agent per fix round | prompt only (SendMessage is not hookable) |
+| p2 never starts a fix round | prompt only |
+| Push and PR only after the user says yes | prompt only (allow rules do not cover push or gh) |
+| Reviewer and matcher do not edit source | prompt only (they have Write for reports) |

@@ -42,7 +42,7 @@ Done when the frontier is empty: every branch visited, nothing silently assumed.
 
 Show the brief path and its Decisions table. Ask with `AskUserQuestion`: "Is this what we are building?" with options **Agree** / **Change something** / **Stop**.
 
-- **Agree:** run `bash .claude/scripts/approve.sh plans/<feature> brief`. Only on this explicit answer in this session.
+- **Agree:** run `bash .claude/scripts/approve.sh plans/<feature> brief`. Only on this explicit answer in this session. The script also sets `status: agreed` in the brief's front matter; do not commit the brief before it ran.
 - **Change something:** take the user's text, go back to step 3 for the affected branch, update the brief, ask again.
 - **Stop:** leave the brief as written and unapproved.
 

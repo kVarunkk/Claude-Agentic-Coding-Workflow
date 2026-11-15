@@ -6,7 +6,8 @@
 #   4. no template placeholders or TODO/TBD left
 #   5. tasks grammar: "## Phase <id>: <title>" units, optional "depends:", one table with
 #      ID | Task | Spec | Files | Status | Done, status [ ] or [x], ISO date on done rows,
-#      Files filled, at most MAX_UNIT_TASKS tasks per unit, depends targets exist
+#      Files filled, at most MAX_UNIT_TASKS tasks per unit, depends targets exist,
+#      every unit has a task whose Files is not "none" (no verify-only units)
 # Usage: check-plan.sh plans/<feature>     Exit 1 on failures (1, 2, 5), 0 otherwise.
 set -u
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -66,6 +67,8 @@ else
     $1 == "unit" { u[$2] = 1; ph[$3] = 1; dep[$2] = $4; order[++n] = $2 }
     $1 == "task" {
       cnt[$2]++
+      f = $6; gsub(/[` \t]/, "", f)
+      if (tolower(f) != "none") code[$2] = 1
       if ($4 == "done" && $5 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) print $3 ": done but Done is not an ISO date (\"" $5 "\")"
       if ($4 == "open" && $5 != "") print $3 ": open but Done is filled (\"" $5 "\")"
       if ($6 == "") print $3 ": Files is empty"
@@ -74,6 +77,7 @@ else
       for (i = 1; i <= n; i++) {
         x = order[i]
         if (cnt[x] > max) print "unit " x ": " cnt[x] " tasks, max is " max " (split into sub-phases)"
+        if (!(x in code)) print "unit " x ": no task changes a file (Files all none). Verify-only units are not allowed; the pipeline runs the baseline and the final checks itself"
         if (dep[x] == "") continue
         k = split(dep[x], d, ",")
         for (j = 1; j <= k; j++) if (!(d[j] in u) && !(d[j] in ph)) print "unit " x ": depends on unknown unit or phase \"" d[j] "\""

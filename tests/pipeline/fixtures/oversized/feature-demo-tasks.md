@@ -46,7 +46,7 @@ depends: 2
 
 | ID | Task | Spec | Files | Status | Done |
 |----|------|------|-------|--------|------|
-| TASK-030 | Verify the full suite. | CON-001 | none | [ ] | |
+| TASK-030 | Add `--upper`. | CON-001 | src/upper.ts, test/upper.test.ts | [ ] | |
 
 ## Requirement traceability
 
