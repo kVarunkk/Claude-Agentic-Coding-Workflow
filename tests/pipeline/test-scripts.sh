@@ -231,6 +231,24 @@ add_unit '^## Phase 3:' 2d
 eq  "fix-unit: wrong id fails"         1 "$(fu check 2c >/dev/null; echo $?)"
 g git checkout -q -- plans/demo
 
+# unit-gate.sh
+ug() { g bash "$S/unit-gate.sh" plans/demo HEAD "$@" 2>&1; }
+eq  "unit-gate: clean unit passes"        "gate: no" "$(ug 0 0)"
+has "unit-gate: fix round gates"          "reason: 1 fix round(s) ran" "$(ug 1 0)"
+eq  "unit-gate: fix round says yes"       "gate: yes" "$(ug 1 0 | tail -1)"
+has "unit-gate: green mutation gates"     "reason: 2 mutation(s) stayed green" "$(ug 0 2)"
+echo '- TASK-021 (SEC-001): test input cut to a"b.' >> "$T"
+has "unit-gate: names the new difference" 'reason: difference logged: - TASK-021 (SEC-001): test input cut to a"b.' "$(ug 0 0)"
+eq  "unit-gate: difference says yes"      "gate: yes" "$(ug 0 0 | tail -1)"
+eq  "unit-gate: off never gates"          "gate: no" "$(UNIT_GATE=off ug 1 0 | tail -1)"
+mkdir -p "$R/plans/demo/approvals" && touch "$R/plans/demo/approvals/afk"
+eq  "unit-gate: AFK never gates"          "gate: no" "$(ug 0 0 | tail -1)"
+rm -f "$R/plans/demo/approvals/afk"
+g git checkout -q -- plans/demo
+eq  "unit-gate: always gates clean unit"  "gate: yes" "$(UNIT_GATE=always ug 0 0)"
+eq  "unit-gate: bad mode fails"           1 "$(UNIT_GATE=sometimes ug 0 0 >/dev/null; echo $?)"
+eq  "unit-gate: bad base fails"           1 "$(g bash "$S/unit-gate.sh" plans/demo nope 0 0 >/dev/null 2>&1; echo $?)"
+
 # scratch-copy.sh
 echo wip > "$R/src/wip.js"
 SC="$TMP/scratch1"

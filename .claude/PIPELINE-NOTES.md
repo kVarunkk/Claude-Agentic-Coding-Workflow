@@ -114,6 +114,13 @@ Shape used by `check-spawn.sh`:
 - `aligning-requirements` is model-invocable (so `/build-feature` can load it) and can also be run on its own. The old `grilling` skill is untouched and not used by the pipeline.
 - `check-spawn.sh` without jq now blocks only gated spawns (implementer, spec-writer); before, it blocked every subagent spawn.
 
+## Unit gate (added 2026-11-15, after dry run 2)
+
+- Dry run 2 (json-flag): unit 1b used the RISK-001 fallback and cut TEST-007 to `a"b`, blaming Windows quoting. The real cause was a JS literal losing `\`. The reviewer passed it as "authorised", phase-1 conformance graded it Accepted (p2), final graded the same gap p0. That cost a Changes unit, a task-verifier fail and a fix round.
+- `UNIT_GATE` in `pipeline.conf` (`exceptions` default, `always`, `off`). `scripts/unit-gate.sh <plan> <base> <rounds> <green>` gates a unit before commit when its Differences section changed, a fix round ran or a mutation stayed green. AFK never gates but the reasons are logged for the Attention section. Tested in `test-scripts.sh`.
+- `checking-spec-conformance`: a logged Difference that weakens a REQ/SEC test is no longer Accepted; the id is graded on the remaining evidence, so phase and final checks agree.
+- `reviewing-code`: a logged test-weakening Difference is checked, not assumed authorised; wrong cause or now-untested behaviour is P1.
+
 ## Known limitations
 
 - Hooks cannot tell who ran `approve.sh`. Use the strict gate option (user runs `! bash .claude/scripts/approve.sh plans/<feature> phase-N`) when that matters.

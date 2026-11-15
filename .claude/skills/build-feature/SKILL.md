@@ -22,7 +22,7 @@ You orchestrate. Subagents write the spec, tasks and code. You write only the br
 - Never answer a gate yourself. Run `approve.sh` only right after the user picked that option in this session.
 - Pass script output verbatim. Never alter, split or reorder a unit.
 - Report each step to the user in one line (`unit 2a: implementer done, review pass, committed abc123`).
-- Read `TEST_CMD` and `MAX_LOOPS` from `.claude/pipeline.conf`.
+- Read `TEST_CMD`, `MAX_LOOPS` and `UNIT_GATE` from `.claude/pipeline.conf`.
 - Every gate uses `AskUserQuestion`. Stop ends the run; all state is in files, so a later `/build-feature <feature>` resumes.
 - Strict gate option: the user may run `! bash .claude/scripts/approve.sh plans/<feature> <name>` themselves and then tell you to continue. Check the marker exists before moving on.
 - **Git.** Work only on `feature/<feature>` (step 0). Stage only with `S/stage-unit.sh` or `git add PLAN`, never `git add -A`. Never force-push, amend, or move or delete a tag (a hook blocks these). Commit messages are `type(scope): subject`, no trailing period, no em dashes. Push and open PRs only after the user says yes, in AFK mode too.
@@ -34,7 +34,7 @@ You orchestrate. Subagents write the spec, tasks and code. You write only the br
 
 The user turns it on only at the tasks gate ("Approve and run to the end"), which writes `PLAN/approvals/afk`. In AFK mode:
 
-- No phase gates and no gate for added units. The hook allows the next phase without `approvals/phase-N`. Everything else still runs: reviews, fix rounds, phase checks, one automatic fix unit per phase, phase reports and tags.
+- No phase gates, no unit gates and no gate for added units. The hook allows the next phase without `approvals/phase-N`. Everything else still runs: reviews, fix rounds, phase checks, one automatic fix unit per phase, phase reports and tags.
 - **Stop, don't ask**, when: a unit is still red or still `verdict: fail` after `MAX_LOOPS` rounds; a hook blocks a spawn; `stage-unit.sh` or `scan-staged.sh` refuses; a phase still fails its conformance check after its fix unit; a script fails. Leave the working tree as it is (no `wip` commit; `status.sh` resumes at the review). Log the stop, then end with one short paragraph: what stopped, the report path, what you need.
 - On resume after a stop, ask the question that stopped the run as a normal gate, then carry on in AFK mode.
 - The run needs no permission prompts: tell the user once, at the tasks gate, that the session should be in auto or accept-edits mode.
@@ -137,7 +137,11 @@ Repeat until `next-unit.sh` prints nothing:
    2. `S/tick-unit.sh PLAN <unit-id>` exits 0.
    3. `S/stage-unit.sh PLAN <unit-id>` (adds the reports), then `S/patch-id.sh PLAN` equals the `PID` of the last review. Different: the code changed after the review; go back to 4.3.
    4. `S/scan-staged.sh`. Exit 1: show the findings and stop; never commit a secret. Exit 3: ask Commit anyway / Stop (AFK: stop).
-   5. `git commit -m "feat(<feature>): unit <unit-id>"`. Log it with the commit sha and the review report.
+   5. **Unit gate.** `S/unit-gate.sh PLAN <BASE> <fix rounds run for this unit> <the second number of the last review's mutations: line>`. Exit 1: stop. Log every `reason:` line with `log-decision.sh` (step `unit-<id>`, decision `gate-reason`), AFK too, so the final Attention section sees them. On `gate: yes`, show the reasons, the last review report and `git diff --cached --stat BASE`, then ask Commit / Request changes / Stop. A logged Difference that weakens or drops a spec test comes first in the question.
+      - Commit: go on.
+      - Request changes: write the user's text to `S/report-path.sh PLAN phase-N/unit-changes-<unit-id>`, spawn a new implementer with `FIX:` that file, then 4.3. This round does not count toward `MAX_LOOPS`.
+      - Stop: leave the change staged; on resume `uncommitted: <unit>` re-reviews it and this gate runs again.
+   6. `git commit -m "feat(<feature>): unit <unit-id>"`. Log it with the commit sha and the review report.
 6. **Phase end.** If `S/phase-done.sh PLAN <unit-id>` exits 0 (or step 0 sent you here with `gate: N`):
    1. `C=$(S/report-path.sh PLAN phase-N/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature> --phase N` and `REPORT: <C>`.
    2. **Automatic fix unit.** If `verdict: fail` and `S/fix-unit.sh PLAN count N` prints 0:

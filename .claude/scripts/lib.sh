@@ -9,17 +9,19 @@ PIPELINE_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 load_conf() {
   local conf="${PIPELINE_CONF:-$PIPELINE_SCRIPTS/../pipeline.conf}"
-  local keep_max="${MAX_UNIT_TASKS-}" keep_loops="${MAX_LOOPS-}" keep_test="${TEST_CMD-}"
+  local keep_max="${MAX_UNIT_TASKS-}" keep_loops="${MAX_LOOPS-}" keep_test="${TEST_CMD-}" keep_gate="${UNIT_GATE-}"
   # shellcheck disable=SC1090
   [ -f "$conf" ] && . "$conf"
   # Values already in the environment win over the file.
   [ -n "$keep_max" ] && MAX_UNIT_TASKS="$keep_max"
   [ -n "$keep_loops" ] && MAX_LOOPS="$keep_loops"
   [ -n "$keep_test" ] && TEST_CMD="$keep_test"
+  [ -n "$keep_gate" ] && UNIT_GATE="$keep_gate"
   MAX_UNIT_TASKS="${MAX_UNIT_TASKS:-5}"
   MAX_LOOPS="${MAX_LOOPS:-2}"
   TEST_CMD="${TEST_CMD-}"
   MAX_FILE_KB="${MAX_FILE_KB:-500}"
+  UNIT_GATE="${UNIT_GATE:-exceptions}"
 }
 
 # default_branch: origin/HEAD, else init.defaultBranch, main or master if that branch exists.

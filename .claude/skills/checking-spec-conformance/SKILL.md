@@ -62,6 +62,8 @@ Code existing isn't evidence. If a test was skipped, or its assertions don't che
 | 🔄 Outdated | the code is right and the spec is stale (a deliberate, unlogged improvement) | Warning: update the spec |
 | ➖ Not started | its task hasn't started (only when checking work in progress) | none |
 
+**A logged test change is not Accepted.** A Differences entry that narrows, weakens, removes or replaces a test for a REQ or SEC id does not make that id Accepted. Grade the id on the evidence that remains: behaviour with no test left is Untested, behaviour only partly tested is Partial, at the severity in the table. Accepted is only for behaviour that differs on purpose. Phase and final checks must grade the same evidence the same way.
+
 **Materiality.** If the naming, file layout or technique differs but the behaviour and contract hold, the id conforms. Flag missing behaviour, contradicted decisions, broken contracts, skipped validation or migration steps, and unplanned scope. When torn between two statuses, give the evidence for both and pick the stricter one.
 
 ## 4. Whole-change checks

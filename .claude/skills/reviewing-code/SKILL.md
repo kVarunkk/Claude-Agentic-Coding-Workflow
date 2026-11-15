@@ -43,7 +43,7 @@ Work through the lenses in [references/lenses.md](references/lenses.md), tests f
 2. **Data shape.** Look for structures that can hold invalid states, information stored twice and kept in sync by hand, and cases you can only extend by grepping.
 3. **Correctness.** Partition by partition.
 4. **Security.** Apply whenever the change reads untrusted input, makes an access or policy decision, or handles secrets.
-5. **Spec alignment and scope.** Missing or partial requirements, behaviour nobody asked for, contradicted decisions. When the change belongs to a task unit: every changed file is in the unit's Files column or logged under Differences, and there is no unrequested refactor or behaviour. Anything else is scope drift (P1).
+5. **Spec alignment and scope.** Missing or partial requirements, behaviour nobody asked for, contradicted decisions. When the change belongs to a task unit: every changed file is in the unit's Files column or logged under Differences, and there is no unrequested refactor or behaviour. Anything else is scope drift (P1). A new Differences entry that narrows, weakens or drops a spec test is not authorised by being logged: check the stated cause yourself, and when it is wrong or the behaviour is now untested, report it as P1.
 6. **Design and standards.** Project rules first, then the smell baseline. Cleanup: comments that restate the code (keep license headers, external constraints, public API docs, issue links and a non-obvious why), try/catch or defensive checks on trusted paths, casts that dodge types, deep nesting. P2 unless they hide a bug.
 7. **Performance and operations.**
 
