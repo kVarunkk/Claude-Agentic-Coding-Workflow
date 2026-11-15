@@ -164,7 +164,7 @@ rm "$R/plans/demo/approvals/afk"
 # stage-unit.sh (unit 2b owns src/name.ts, test/name.test.ts, README.md)
 echo n > "$R/src/name.ts"; echo t > "$R/test/name.test.ts"; echo y >> "$R/README.md"; echo s > "$R/plans/demo/notes.md"
 eq  "stage-unit: owned files staged"   0 "$(g bash "$S/stage-unit.sh" plans/demo 2b >/dev/null 2>&1; echo $?)"
-eq  "stage-unit: staged set"           "README.md plans/demo/notes.md src/name.ts test/name.test.ts" "$(g git diff --cached --name-only | sort | tr '\n' ' ' | sed 's/ $//')"
+eq  "stage-unit: staged set"           "README.md plans/demo/notes.md src/name.ts test/name.test.ts" "$(g git diff --cached --name-only | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//')"
 g git reset -q
 echo z > "$R/src/other.ts"
 eq  "stage-unit: stray file blocks"    1 "$(g bash "$S/stage-unit.sh" plans/demo 2b >/dev/null 2>&1; echo $?)"
