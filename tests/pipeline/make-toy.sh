@@ -17,7 +17,7 @@ copy_pipeline() {
   done
   cp "$ROOT/.claude/settings.json" "$T/.claude/"
   # Small units so the toy plan must use sub-phases.
-  printf 'TEST_CMD="npm test"\nMAX_UNIT_TASKS=2\nMAX_LOOPS=2\n' > "$T/.claude/pipeline.conf"
+  printf 'TEST_CMD="npm test"\nMAX_UNIT_TASKS=2\nMAX_LOOPS=2\nUNIT_GATE=exceptions\n' > "$T/.claude/pipeline.conf"
 }
 
 if [ $sync -eq 1 ]; then copy_pipeline; echo "synced pipeline into $T"; exit 0; fi
