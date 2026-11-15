@@ -28,8 +28,8 @@ Run from the repo root: `bash .claude/scripts/check-plan.sh plans/<feature>`. Ev
 
 0. **Brief (spec mode).** Every brief decision, scope line, out-of-scope line and constraint is honoured. A spec line that contradicts the brief, or drops a brief decision, is P0. Behaviour the brief marks out of scope is P0. A decision the spec took that the brief never covered and that changes what gets built, without an Open question, is P1.
 1. **Testable.** Every REQ and SEC id is one statement with an exact value, and you can picture its test.
-2. **Coverage (tasks mode).** Every REQ and SEC id maps to a task whose Task text actually builds it, and every task maps to a spec id. The script checks ids; you check meaning.
-3. **Task scan (tasks mode).** Every Task cell allows one reasonable implementation and names its tests. No "handle edge cases".
+2. **Coverage (tasks mode).** Every REQ and SEC id maps to a task whose Task text actually builds it, and every task maps to a spec id. The script checks ids; you check meaning. Every part of each REQ and SEC id also has a test that will check it. A Decisions-taken row or Task cell that leaves part of a REQ or SEC id to code review, reading the code or manual checking, with no test, is **P1**: the conformance check grades that part Untested or Partial (`checking-spec-conformance`, "A logged test change is not Accepted"), so the plan must grade it the same way now.
+3. **Task scan (tasks mode).** Every Task cell allows one reasonable implementation and names its tests. No "handle edge cases". A test that will pass as soon as it is written (earlier code already gives the behaviour) must be marked `**Guard:**`, not `**Red:**`; an unmarked one is P2.
 4. **Unit size and order (tasks mode).** No unit above `MAX_UNIT_TASKS` (`.claude/pipeline.conf`). Each unit ends green and runnable. `depends:` matches real dependencies.
 5. **Files (tasks mode).** Each task's Files column names every file it must touch, tests included. Units that share the same `depends:` set must list disjoint files.
 6. **Names.** Files, functions, types, constants and routes are spelled the same in both files and across tasks.

@@ -167,6 +167,18 @@ Defects and friction (R-ids), status as of 2026-11-15 session 2:
 - R11. User's global SessionStart hook fails in Git Bash (`powershell: command not found`). Not ours; the user fixes it.
 - Real run at the end: now build-feature step 5.2 and a Verified-evidence rule in checking-spec-conformance.
 
+### Run 3 findings (2026-11-16, pipeline-toy-3, json-flag, not AFK)
+
+Worked: brief to final in one session; 1a reviewer's mutation caught a `'a\b'` (backspace) backslash test; auto-fix unit 1d path end to end; unit gate skipped a clean unit; PR step stopped cleanly with no remote. Cost: 11 user questions and 1h03m for about 4 lines of code.
+
+- R12. Task-verifier passed "stderr covered by code review" in Decisions taken; phase conformance failed it as P1, costing the whole 1d cycle. FIXED: reviewing-plans Coverage makes that P1; writing-tasks forbids it; checking-spec-conformance names Decisions-taken rows in "a logged test change is not Accepted".
+- R13. writing-specs told the spec-writer to defer open questions to a task ("Decided in TASK-041"); spec-verifier flagged it. FIXED: open questions are answered at the spec gate, asked in the gate's own question.
+- R14. Planned guard tests passing at once were logged as Differences and stopped units 1b and 1c at the unit gate. FIXED: `**Guard:**` marker in writing-tasks, its template and implementer; only an early-passing `**Red:**` test is logged; an unmarked would-be guard is a P2 in reviewing-plans.
+- R15. Final conformance graded REQ-010 and SEC-002 Met with 0 P2 where the phase check, on the same code, had warnings. FIXED: the final check carries every phase finding forward or names what closed it.
+- R16. P2s at the tasks gate were never applied (stale Decisions row, duplicate traceability rows, wrong TASK-014 text all reached the final report), and `check-plan.sh` warned 3 times on group labels like "REQ-010 to REQ-019". FIXED: spec and tasks gates offer "Fix the P2 notes" first when p2 > 0; `check-plan.sh` skips ranges in the undeclared-id check (tested).
+- R17. A one-phase feature asked the phase gate and the final gate back to back. FIXED: the last phase has no phase gate; it is tagged after its report and `status.sh` ends it by the tag (tested).
+- Not fixed (minor): orchestrator shorthand to the user ("Gate: no."), reviewer fix snippets losing escapes in markdown, Done dates local while approval stamps are UTC.
+
 Next dry run (run 2): checks 3, 6, 8, plus the new paths: AFK run end to end, a fresh-agent fix round (`FIX:` spawn), a `stage-unit.sh` stray stop (touch an extra file during a unit), the final gate and the PR step (needs a remote; else check it stops cleanly without one). Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit (expect `uncommitted: <unit>` on resume).
 
 ## Decisions taken 2026-11-15 (session 2)

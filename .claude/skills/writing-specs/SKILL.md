@@ -39,7 +39,7 @@ Write for an engineer who knows the language but has never seen this codebase or
 - **Changing existing behaviour?** Fill in *Preserved behaviour* (what must keep working) and *Superseded behaviour* (`old → removed / replaced by REQ-0xx`). Then nobody restores the old path just to make an old test pass.
 - **Alternatives are real decisions.** Say what each one was, then Rejected, Deferred or Not chosen for v1, and why, with evidence.
 - **Tests by layer** (unit, DB, route, component, eval), each saying what it proves. Tests drive the agreed seams. Mock only at system boundaries: network, model, clock, external APIs.
-- **Open questions** each name what settles them ("Decided in TASK-041").
+- **Open questions** are answered by the user at the spec gate, never deferred to a task: a task cannot ask the user. Each one gives your recommended answer and the REQ and TEST ids that change with the answer.
 - Use plain, short sentences. Lead with the point.
 
 ## Changing a spec later

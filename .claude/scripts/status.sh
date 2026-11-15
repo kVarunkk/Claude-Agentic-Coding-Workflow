@@ -6,7 +6,8 @@
 #   tasks: missing|written|approved
 #   afk: on|off                approvals/afk exists (user chose AFK at the tasks gate)
 #   gate: <N>|none             first phase whose tasks are all done but whose phase end is not finished:
-#                              approvals/phase-<N> missing, or in AFK mode the tag <feature>-phase-<N> missing
+#                              approvals/phase-<N> missing, or the tag <feature>-phase-<N> missing in AFK mode
+#                              and for the last phase (it has no gate of its own: the final gate covers it)
 #   uncommitted: <unit>|none   the unit open at HEAD is fully ticked in the working tree (built, not committed)
 #   next: <next-unit.sh line>|none
 #   final: approved|open
@@ -39,9 +40,10 @@ if [ "$t" != missing ]; then
     $1 == "unit" { if (!($3 in seen)) { seen[$3] = 1; order[++n] = $3 } }
     $1 == "task" { ph = $2; sub(/[a-z]$/, "", ph); if ($4 == "open") popen[ph] = 1 }
     END { for (i = 1; i <= n; i++) print order[i], ((order[i] in popen) ? 0 : 1) }')
+  lastp=$(printf '%s\n' "$phases" | tail -1 | cut -d' ' -f1)
   while read -r p complete; do
     [ "$complete" = 1 ] || break
-    if [ "$afk" = on ]; then
+    if [ "$afk" = on ] || [ "$p" = "$lastp" ]; then
       git -C "$plan" rev-parse -q --verify "refs/tags/$feature-phase-$p" >/dev/null 2>&1 && continue
     else
       [ -f "$plan/approvals/phase-$p" ] && continue

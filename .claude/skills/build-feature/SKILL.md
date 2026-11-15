@@ -18,7 +18,7 @@ You orchestrate. Subagents write the spec, tasks and code. You write only the br
 - **Fresh agent every round.** Never resume a writer, implementer or reviewer with `SendMessage`. A fix round is a new agent whose prompt names its input file in a `FIX:` line. When the input is the user's text, first write it to a file from `S/report-path.sh PLAN <stage>/changes` and pass that.
 - **Reports.** Every report path comes from `S/report-path.sh PLAN <stage>/<name>` and goes to the agent in a `REPORT:` line. Re-runs get `-2`, `-3`; nothing is overwritten. Stages: `spec`, `tasks`, `phase-<N>`, `final`.
 - Read only the SUMMARY block of a reviewer, verifier or matcher reply. Open the full report only when escalating to the user.
-- **Severity.** `verdict: fail` (p0 or p1 above 0) starts a fix round. p2 never starts a fix round. At a gate where p0 and p1 are 0, Approve is the first option, marked "(Recommended)", and the P2s are listed as notes.
+- **Severity.** `verdict: fail` (p0 or p1 above 0) starts a fix round. p2 never starts a fix round on its own. At a gate where p0 and p1 are 0, Approve is the first option, marked "(Recommended)", and the P2s are listed as notes. Exception: at the spec and tasks gates with p2 above 0, **Fix the P2 notes** comes first, marked "(Recommended)": later agents read these files, so stale rows and wrong text there cost more later than one writer round now.
 - Never answer a gate yourself. Run `approve.sh` only right after the user picked that option in this session.
 - Pass script output verbatim. Never alter, split or reorder a unit.
 - Report each step to the user in one line (`unit 2a: implementer done, review pass, committed abc123`).
@@ -77,7 +77,7 @@ Reach consensus with the user on what gets built. Invoke the `aligning-requireme
    ```
 2. **Verify.** `R=$(S/report-path.sh PLAN spec/review)`. Spawn `spec-verifier`: `spec plans/<feature>` and `REPORT: <R>`.
 3. **Fix loop.** While `verdict: fail`, at most `MAX_LOOPS` rounds: spawn a new `spec-writer` with the same PLAN and Brief lines plus `FIX: <R>` and "Fix only the P0 and P1 findings in that file." Then a new `spec-verifier` with a new `REPORT:` and `RECHECK: <R>`. Still failing: show the remaining `top:` lines at the gate.
-4. **Gate.** Show the spec path, the report path, its open questions, any place it departs from the brief, and the P2 notes. Approve / Request changes / Stop. Approve: `S/approve.sh PLAN spec`. Request changes: write the user's text to `S/report-path.sh PLAN spec/changes`, spawn a new spec-writer with `FIX:` that file, then go to 2.2 with `RECHECK:` the last review. If the change contradicts a brief decision, update the brief first (step 1, Change something).
+4. **Gate.** Show the spec path, the report path, its open questions, any place it departs from the brief, and the P2 notes. Ask each open question in the same `AskUserQuestion` call; the answers go into the change file. Options: Approve / Request changes / Stop, with **Fix the P2 notes** first when p2 is above 0 (as Request changes, the change file listing those P2s and the open-question answers; the gate comes again after the recheck). Approve: `S/approve.sh PLAN spec`. Request changes: write the user's text to `S/report-path.sh PLAN spec/changes`, spawn a new spec-writer with `FIX:` that file, then go to 2.2 with `RECHECK:` the last review. If the change contradicts a brief decision, update the brief first (step 1, Change something).
 
 ## 3. Tasks
 
@@ -85,7 +85,8 @@ Reach consensus with the user on what gets built. Invoke the `aligning-requireme
 2. **Verify.** Run `S/check-plan.sh PLAN` yourself. `R=$(S/report-path.sh PLAN tasks/review)`. Spawn `task-verifier`: `tasks plans/<feature>` and `REPORT: <R>`.
 3. **Fix loop.** As 2.3, with a new task-writer (`PLAN:` line, `FIX: <R>`) and a new task-verifier. A FAIL from check-plan counts as p0.
 4. **Gate.** Show the units in order with their task ids, the report path and the P2 notes. Options:
-   - **Approve**: `S/approve.sh PLAN tasks`. Phases are gated one by one.
+   - **Fix the P2 notes** (only when p2 is above 0, then first and recommended): as Request changes, with the P2 lines from the review as the change file. The gate comes again after the recheck. `AskUserQuestion` takes four options, so in this case Request changes is the free-text answer ("Other"): say so in the question.
+   - **Approve**: `S/approve.sh PLAN tasks`. Phases are gated one by one, except the last (4.6.4).
    - **Approve and run to the end (AFK)**: `S/approve.sh PLAN tasks` and `S/approve.sh PLAN afk`. No more gates until the final review; the run stops on its own if something fails. Say that the session should be in auto or accept-edits mode.
    - **Request changes**: as 2.4, with the task-writer and `tasks/changes`.
    - **Stop.**
@@ -153,7 +154,9 @@ Repeat until `next-unit.sh` prints nothing:
 
       A second `verdict: fail` for the same phase goes to the gate as is (AFK: stop).
    3. **Phase report.** `P=$(S/report-path.sh PLAN phase-N/report)`. Write: phase N's units with their commit shas (`git log --oneline <previous tag>..HEAD`), each unit's last review report and verdict, the `Differences from the spec` entries for phase N's tasks, the matcher SUMMARY, the `TEST_CMD` command and result (run now), and `git diff --stat <previous tag>..HEAD`. The previous tag is `<feature>-phase-<previous N>`, or `<feature>-tasks`. Commit it: `git add PLAN && git commit -m "docs(<feature>): phase N report"`.
-   4. **Gate** (not AFK). Show the report path and the one-line results. Approve / Request changes / Stop.
+   4. **Gate** (not AFK, and not the last phase). Show the report path and the one-line results. Approve / Request changes / Stop.
+
+      **Last phase** (`S/next-unit.sh PLAN` prints nothing): no phase gate, since the final gate comes next and covers the same work. `git tag <feature>-phase-N` right after the report and go to 5. `status.sh` treats the last phase as ended by its tag, so a resume goes to 5 too.
       - Approve: `S/approve.sh PLAN phase-N`, then `git tag <feature>-phase-N`.
       - Request changes: write the user's text to `S/report-path.sh PLAN phase-N/changes`. Add a unit as in 4.6.2, titled `Changes <short title>` instead of `Auto-fix`, from that file. Then continue the loop; the phase end and its gate come again.
 

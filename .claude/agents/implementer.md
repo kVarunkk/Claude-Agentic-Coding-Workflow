@@ -23,7 +23,7 @@ and may have a `FIX: <file>` line.
 Implement exactly those task ids. Nothing else.
 
 1. Read the tasks file, then only the spec sections named in your tasks' Spec column.
-2. For each task, in order: Red (write the next test, run it, and see it fail for the intended reason: an assertion about behaviour, not an import error), Green (minimum code), repeat per test, then Refactor with tests green.
+2. For each task, in order: Red (write the next test, run it, and see it fail for the intended reason: an assertion about behaviour, not an import error), Green (minimum code), repeat per test, then Refactor with tests green. Tests listed under `**Guard:**` are planned to pass at once: write them and run them, with no Red step and no Differences entry. A `**Red:**` test that passes before you write its code is a deviation: log it.
 3. Run the project test command (`TEST_CMD` in `.claude/pipeline.conf`). When a task's tests pass, set its Status to `[x]` and Done to today's ISO date.
 4. Touch only files in your tasks' Files column. If you must touch another file, log why under `## Differences from the spec`, naming the file path.
 5. Log every deviation from the spec there, one bullet with the task id.

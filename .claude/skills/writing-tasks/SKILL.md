@@ -44,6 +44,8 @@ depends: 1
 - **Added units.** At a phase end the pipeline may ask for one unit `## Phase <N><letter>: Auto-fix <title>` (from a conformance report) or `Changes <title>` (from the user's text). Add only that section after phase N's last unit, plus traceability rows for its tasks. `fix-unit.sh check` fails if anything else changed.
 - **Tasks are vertical slices.** Each task is one behaviour through every layer it needs (schema, logic, route, UI, tests), not one layer at a time. Additive work comes first and removals come last. A task is the smallest unit that has its own test cycle and could be accepted or rejected on its own.
 - **Red → Green → Refactor in every task.** The Task cell names the tests first, with the spec's exact values (`**Red:** … **Tests:** …`). Then it says what to build (`**Green:** …`): the file, the exact signature and the values.
+- **Guard tests.** A test that will pass as soon as it is written, because earlier code already gives the behaviour, is listed under `**Guard:** …` instead of `**Red:**`, with one line on which earlier code makes it pass. A guard still has to fail when that behaviour breaks; the code reviewer proves it with a mutation. A task with only guard tests and no Green still needs a file it changes (the test file).
+- **Decisions taken never leave a REQ or SEC id untested.** "Covered by code review" or "checked by reading the code" for part of a REQ or SEC id fails conformance later; write the test instead.
 - **One name per thing.** When a later task uses something an earlier task makes, both use the same name (function, type, route), and so does the spec.
 - **Every task decides something.** "Handle edge cases", "add validation" and "write tests" decide nothing: name the cases and the tests instead. Include a function body only when the signature and tests leave the algorithm open.
 - A new field or entity lists every layer it crosses (schema, migration, query, API type, client type, UI, validation) in the same task.
@@ -56,6 +58,6 @@ depends: 1
 
 - Work one test at a time: red, green, then the next test. Refactor with the tests green.
 - When a task's tests pass, change its Status to `[x]` and put today's ISO date in Done. Tick only your own tasks.
-- Log each deviation under `## Differences from the spec` as it happens, one bullet per entry: `- TASK-021 (REQ-015): <what differs and why>.` Touching a file outside the task's Files column is a deviation.
+- Log each deviation under `## Differences from the spec` as it happens, one bullet per entry: `- TASK-021 (REQ-015): <what differs and why>.` Touching a file outside the task's Files column is a deviation. So is a `**Red:**` test that passes before its code is written: log it with the reason. A `**Guard:**` test that passes at once is planned, so don't log it (logging it stops the unit for the user for no reason).
 - When a decision changes the spec, say so under Differences; the spec is updated through `writing-specs`.
 - Move the status badge through `Planned` (blue) → `In progress` (yellow) → `Completed` (brightgreen).

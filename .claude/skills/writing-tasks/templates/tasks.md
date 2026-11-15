@@ -19,6 +19,8 @@ These tasks implement `plans/<feature>/feature-<feature>-spec.md` (v0.1) with te
 2. **Green:** write the minimum code that makes it pass. Repeat 1-2 for each listed test.
 3. **Refactor:** with the tests green, clean up, then run the lint and type checks.
 
+A test listed under **Guard:** is expected to pass as soon as it is written, because earlier code already gives the behaviour. It is not logged as a difference.
+
 Rules:
 - <test isolation: e.g. tests never call the network or a real model; which test utils to use>
 - Tests drive the seams agreed in spec §9. Mock only at system boundaries.

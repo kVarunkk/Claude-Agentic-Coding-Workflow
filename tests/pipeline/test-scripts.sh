@@ -114,6 +114,13 @@ mkplan verify-only 's#| TASK-030 | Add `--upper`. | CON-001 | src/upper.ts, test
 eq  "check-plan: verify-only unit fails"   1 "$(bash "$S/check-plan.sh" "$TMP/verify-only" >/dev/null 2>&1; echo $?)"
 has "check-plan: names the verify-only unit" "unit 3: no task changes a file" "$(bash "$S/check-plan.sh" "$TMP/verify-only" 2>&1)"
 
+# ---- check-plan.sh: id ranges used as group labels ----
+mkdir -p "$TMP/range"; cp "$FX/valid/"feature-demo-*.md "$TMP/range/"
+echo "Flags (REQ-001 to REQ-009) and escaping (SEC-001 – SEC-005):" >> "$TMP/range/feature-demo-spec.md"
+eq  "check-plan: range label over undeclared ids is no warning" "" "$(bash "$S/check-plan.sh" "$TMP/range" 2>&1 | grep 'never declared')"
+echo "See REQ-099." >> "$TMP/range/feature-demo-spec.md"
+has "check-plan: a lone undeclared id still warns" "REQ-099" "$(bash "$S/check-plan.sh" "$TMP/range" 2>&1)"
+
 # ---- report-path.sh ----
 rp() { bash "$S/report-path.sh" "$TMP/partial" "$1" 2>/dev/null; }
 eq  "report-path: first report"        "$TMP/partial/reports/phase-2/review-2a.md" "$(rp phase-2/review-2a)"
@@ -160,6 +167,15 @@ eq  "status: afk, phase 1 not tagged is the gate" "gate: 1;" "$(g bash "$S/statu
 g git tag demo-phase-1
 eq  "status: afk, tag clears the gate" "gate: none;" "$(g bash "$S/status.sh" plans/demo | tr '\n' ';' | grep -oE 'gate: [^;]*;')"
 rm "$R/plans/demo/approvals/afk"
+
+# status.sh: the last phase has no phase gate; its tag ends it, as in AFK mode (on a copy of the repo)
+R3="$TMP/repo-last"; cp -r "$R" "$R3"
+for t in TASK-021 TASK-022 TASK-023 TASK-030; do ( cd "$R3" && sedi "$(tick $t)" plans/demo/feature-demo-tasks.md ); done
+for p in phase-1 phase-2; do bash "$S/approve.sh" "$R3/plans/demo" $p >/dev/null; done
+st3() { bash "$S/status.sh" "$R3/plans/demo" | tr '\n' ';' | grep -oE 'gate: [^;]*;|next: [^;]*;' | tr -d '\n'; }
+eq  "status: last phase done, not tagged is the gate" "gate: 3;next: none;" "$(st3)"
+git -C "$R3" tag demo-phase-3
+eq  "status: last phase tag clears the gate, no approval needed" "gate: none;next: none;" "$(st3)"
 
 # stage-unit.sh (unit 2b owns src/name.ts, test/name.test.ts, README.md)
 echo n > "$R/src/name.ts"; echo t > "$R/test/name.test.ts"; echo y >> "$R/README.md"; echo s > "$R/plans/demo/notes.md"

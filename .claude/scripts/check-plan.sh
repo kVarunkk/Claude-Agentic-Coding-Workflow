@@ -2,7 +2,8 @@
 # Mechanical checks for a plans/<feature>/ folder:
 #   1. every id is declared once (spec bullets, task/goal rows)
 #   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count)
-#   3. every referenced id is declared somewhere
+#   3. every id referenced on its own is declared somewhere (ranges are skipped: "REQ-010 to REQ-019"
+#      as a group label over REQ-010..REQ-012 is fine)
 #   4. no template placeholders or TODO/TBD left
 #   5. tasks grammar: "## Phase <id>: <title>" units, optional "depends:", one table with
 #      ID | Task | Spec | Files | Status | Done, status [ ] or [x], ISO date on done rows,
@@ -34,6 +35,11 @@ refs() {
   }'
 }
 
+# Ids referenced on their own in a file: ranges are removed first, ends included.
+refs_plain() {
+  sed -E "s/\b($ALL)-[0-9]+ *(–|—|-|to) *($ALL)-[0-9]+\b//g" "$1" | grep -oE "\b($ALL)-[0-9]+\b"
+}
+
 spec_decl=$(grep -oE "^[[:space:]]*- \*\*($P)-[0-9]+" "$spec" | grep -oE "($P)-[0-9]+")
 task_decl=$( { grep -oE "^\| *(TASK|GOAL)-[0-9]+ *\|" "$tasks"; grep -oE "^[[:space:]]*- \*\*GOAL-[0-9]+" "$tasks"; } | grep -oE "(TASK|GOAL)-[0-9]+")
 
@@ -49,7 +55,7 @@ if [ -n "$missing" ]; then
 fi
 
 declared=$(printf '%s\n%s\n' "$spec_decl" "$task_decl" | grep -v '^$' | sort -u)
-undeclared=$( { refs "$spec"; refs "$tasks"; } | sort -u | comm -23 - <(echo "$declared"))
+undeclared=$( { refs_plain "$spec"; refs_plain "$tasks"; } | sort -u | comm -23 - <(echo "$declared"))
 if [ -n "$undeclared" ]; then
   echo "WARN: ids referenced but never declared:"; echo "$undeclared" | sed 's/^/  /'; warn=1
 fi
