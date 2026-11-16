@@ -179,6 +179,16 @@ Worked: brief to final in one session; 1a reviewer's mutation caught a `'a\b'` (
 - R17. A one-phase feature asked the phase gate and the final gate back to back. FIXED: the last phase has no phase gate; it is tagged after its report and `status.sh` ends it by the tag (tested).
 - Not fixed (minor): orchestrator shorthand to the user ("Gate: no."), reviewer fix snippets losing escapes in markdown, Done dates local while approval stamps are UTC.
 
+### Run 4 findings (2026-11-16, pipeline-toy-4, name-check, not AFK)
+
+Worked: brief to accepted in 50 min, 3 units, no P0/P1 anywhere. R14 Guard marker (no false Differences, unit gate skipped all 3 units), R17 no-gate last phase, R15 carry-forward and R16 "Fix the P2 notes" (used twice) all exercised. Not exercised: AFK, R13.
+
+- R18. A spec id kept as `(removed in v0.2: …)` still had to be referenced by the tasks file; the task-verifier's P2 told the writer to drop that reference, and check-plan then FAILed (an extra writer round). FIXED: `check-plan.sh` exempts removed ids from "REQ/SEC ids with no task" (tested).
+- R19. `scan-staged.sh` forked ~10 processes per added line: 45.8 s for unit 1b's 77 lines on Git Bash, and past the 2-minute Bash timeout while the reviewer's leftover process ran. FIXED: added lines are collected once and each pattern is one grep (2.2 s on the same diff; file:line kept, tested).
+- R20. The spec-verifier moved an untestable REQ into PAT-002 "Checked by code review", yet conformance graded it Untested (P2) at phase 2 and final, and it reached the final gate. FIXED: checking-spec-conformance grades a spec-marked "Checked by code review" CON/GUD/PAT as Met on Inspected evidence (never REQ/SEC); writing-specs says when to use the marker.
+- R21. The unit-1b reviewer left `$TMPDIR/mut-1b` locked by a background process and its notification read "waiting on its own background work". FIXED: code-reviewer runs everything in the scratch copy in the foreground and deletes it before its SUMMARY; build-feature clears `$TMPDIR/mut-<unit>*` before each review.
+- Not fixed (minor): PR question asked with no `origin` remote; stray `· summary` at the end of some orchestrator messages; the SessionStart error is the user's global hook calling `powershell` from Git Bash, not the pipeline.
+
 Next dry run (run 2): checks 3, 6, 8, plus the new paths: AFK run end to end, a fresh-agent fix round (`FIX:` spawn), a `stage-unit.sh` stray stop (touch an extra file during a unit), the final gate and the PR step (needs a remote; else check it stops cleanly without one). Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit (expect `uncommitted: <unit>` on resume).
 
 ## Decisions taken 2026-11-15 (session 2)

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Mechanical checks for a plans/<feature>/ folder:
 #   1. every id is declared once (spec bullets, task/goal rows)
-#   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count)
+#   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count);
+#      an id declared as "(removed in v0.2: ...)" is exempt
 #   3. every id referenced on its own is declared somewhere (ranges are skipped: "REQ-010 to REQ-019"
 #      as a group label over REQ-010..REQ-012 is fine)
 #   4. no template placeholders or TODO/TBD left
@@ -49,7 +50,9 @@ if [ -n "$dups" ]; then
 fi
 
 task_refs=$(refs "$tasks" | sort -u)
-missing=$(echo "$spec_decl" | grep -E "^(REQ|SEC)-" | sort -u | comm -23 - <(echo "$task_refs"))
+# Ids kept as "(removed in vX: ...)" stubs are declared but need no task.
+removed=$(grep -E "^[[:space:]]*- \*\*($P)-[0-9]+\*\*:? *\(removed" "$spec" | grep -oE "($P)-[0-9]+" | sort -u)
+missing=$(echo "$spec_decl" | grep -E "^(REQ|SEC)-" | sort -u | comm -23 - <(echo "$task_refs") | comm -23 - <(echo "$removed"))
 if [ -n "$missing" ]; then
   echo "FAIL: REQ/SEC ids with no task:"; echo "$missing" | sed 's/^/  /'; fail=1
 fi

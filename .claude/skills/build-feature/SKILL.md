@@ -111,7 +111,7 @@ Repeat until `next-unit.sh` prints nothing:
    If the hook blocks the spawn, show the reason to the user and stop. Do not retry with a different unit.
 3. **Stage and review.**
    1. `S/stage-unit.sh PLAN <unit-id>`. Exit 1 (files outside the unit): write its output to `S/report-path.sh PLAN phase-N/stray-<unit-id>` and treat it as a failed review (4.4).
-   2. `PID=$(S/patch-id.sh PLAN)`. `R=$(S/report-path.sh PLAN phase-N/review-<unit-id>)`.
+   2. `PID=$(S/patch-id.sh PLAN)`. `R=$(S/report-path.sh PLAN phase-N/review-<unit-id>)`. Run `rm -rf "$TMPDIR"/mut-<unit-id>*` so a scratch copy left by an earlier reviewer cannot block this one (`scratch-copy.sh` refuses an existing folder).
    3. Spawn `code-reviewer`:
       ```
       PLAN: plans/<feature>

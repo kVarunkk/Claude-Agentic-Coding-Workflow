@@ -62,6 +62,8 @@ Code existing isn't evidence. If a test was skipped, or its assertions don't che
 | 🔄 Outdated | the code is right and the spec is stale (a deliberate, unlogged improvement) | Warning: update the spec |
 | ➖ Not started | its task hasn't started (only when checking work in progress) | none |
 
+**Checked by code review.** A CON, GUD or PAT id that the spec itself marks "Checked by code review" (an implementation choice no test can observe, such as `process.exitCode` over `process.exit`) is ✅ Met on Inspected evidence: give the file:line, and grade it Diverges if the code does otherwise. It is not Untested and carries no Warning. This never applies to REQ or SEC ids, nor to a marker added outside the approved spec (a tasks Decisions row or a Differences entry).
+
 **A logged test change is not Accepted.** A Differences entry or Decisions-taken row that narrows, weakens, removes or replaces a test for a REQ or SEC id, or leaves part of it to code review or reading, does not make that id Accepted. Grade the id on the evidence that remains: behaviour with no test left is Untested, behaviour only partly tested is Partial, at the severity in the table. Accepted is only for behaviour that differs on purpose. Phase and final checks must grade the same evidence the same way.
 
 **Final check carries the phase findings.** Without `--phase`, read the newest `conformance*.md` of every `reports/phase-*/` folder first. Each Critical, Major and Warning they list appears in your report again at the same severity, unless you name what closed it (the test, `file › test name`, or the commit). Dropping a phase finding silently is not allowed: the same evidence gets the same grade.

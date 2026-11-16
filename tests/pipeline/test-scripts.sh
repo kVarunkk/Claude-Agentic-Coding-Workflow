@@ -121,6 +121,15 @@ eq  "check-plan: range label over undeclared ids is no warning" "" "$(bash "$S/c
 echo "See REQ-099." >> "$TMP/range/feature-demo-spec.md"
 has "check-plan: a lone undeclared id still warns" "REQ-099" "$(bash "$S/check-plan.sh" "$TMP/range" 2>&1)"
 
+# ---- check-plan.sh: removed ids need no task ----
+mkdir -p "$TMP/removed"; cp "$FX/valid/"feature-demo-*.md "$TMP/removed/"
+echo "- **REQ-098**: (removed in v0.2: moved to PAT-001)" >> "$TMP/removed/feature-demo-spec.md"
+eq  "check-plan: a removed REQ needs no task" 0 "$(bash "$S/check-plan.sh" "$TMP/removed" >/dev/null 2>&1; echo $?)"
+echo "- **REQ-097**: Still live." >> "$TMP/removed/feature-demo-spec.md"
+out=$(bash "$S/check-plan.sh" "$TMP/removed" 2>&1)
+has "check-plan: a live REQ with no task still fails" "REQ-097" "$out"
+eq  "check-plan: the removed REQ is not listed" "" "$(printf '%s\n' "$out" | grep REQ-098)"
+
 # ---- report-path.sh ----
 rp() { bash "$S/report-path.sh" "$TMP/partial" "$1" 2>/dev/null; }
 eq  "report-path: first report"        "$TMP/partial/reports/phase-2/review-2a.md" "$(rp phase-2/review-2a)"
@@ -220,7 +229,12 @@ eq  "scan: binary file is MEDIUM"      3 "$(sc)"
 g git reset -q; rm "$R/src/blob.bin"
 printf '## Why\nship it %s%s\n' "ghp_" "abcdefghijklmnopqrstuvwxyz0123456789" > "$TMP/body.md"
 eq  "scan: --file finds a token"       1 "$(bash "$S/scan-staged.sh" --file "$TMP/body.md" >/dev/null 2>&1; echo $?)"
-g git reset -q; rm -f "$R/src/clean.js" "$R/src/conf.py"
+printf 'a\nb %s%s scan:allow\nc\n' "ghp_" "abcdefghijklmnopqrstuvwxyz0123456789" > "$TMP/body2.md"
+eq  "scan: --file honours scan:allow"  0 "$(bash "$S/scan-staged.sh" --file "$TMP/body2.md" >/dev/null 2>&1; echo $?)"
+printf 'one\ntwo\nthree\nk = "%s%s"\n' "AKIA" "ABCDEFGHIJKLMNOP" > "$R/src/multi.js"; echo "x" > "$R/src/clean.js"; g git add src/multi.js src/clean.js
+eq  "scan: finds a key on a later line" 1 "$(sc)"
+has "scan: names the right file and line" "HIGH src/multi.js:4: looks like a AWS access key" "$(cat "$TMP/scan")"
+g git reset -q; rm -f "$R/src/clean.js" "$R/src/conf.py" "$R/src/multi.js"
 
 # fix-unit.sh
 fu() { g bash "$S/fix-unit.sh" plans/demo "$@" 2>&1; }
