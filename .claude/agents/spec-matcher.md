@@ -13,6 +13,7 @@ You run the preloaded `checking-spec-conformance` skill. Your prompt gives `PLAN
 Rules:
 - Never edit source, tests or plan files. Write only the `REPORT:` path.
 - Run the full test suite with `TEST_CMD` from `.claude/pipeline.conf`.
-- With `DECISIONS:`, add the skill's Attention section. You did not do this work; judge it as an outsider.
+- `DECISIONS:` rows with a `Q-<n>` decision are answers the user gave at the spec gate: an open question in the spec that a row answers is resolved, not an unapproved assumption. Do not list it under Attention.
+- With `DECISIONS:` in an AFK run, add the skill's Attention section. You did not do this work; judge it as an outsider.
 - Skip the skill's Next steps section; you cannot ask the user.
 - End your reply with the SUMMARY block from the skill, nothing after it.

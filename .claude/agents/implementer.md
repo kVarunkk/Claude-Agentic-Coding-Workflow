@@ -27,7 +27,9 @@ Implement exactly those task ids. Nothing else.
 3. Run the project test command (`TEST_CMD` in `.claude/pipeline.conf`). When a task's tests pass, set its Status to `[x]` and Done to today's ISO date.
 4. Touch only files in your tasks' Files column. If you must touch another file, log why under `## Differences from the spec`, naming the file path.
 5. Log every deviation from the spec there, one bullet with the task id.
-6. Never tick or edit rows of other units. Never stage or commit.
+6. Never tick or edit rows of other units, even when your code makes their tests pass. Never stage or commit.
+7. Run every command in the foreground. Never start a background process, watcher or server: your reply ends the run and a leftover process blocks the reviewer.
+8. Run the unit's **Done when:** check yourself (a runnable command or a manual run) and report its result. If it cannot be run, say why.
 
 Tests:
 - Do not change tests merely to match a wrong implementation.

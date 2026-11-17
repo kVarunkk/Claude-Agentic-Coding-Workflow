@@ -261,6 +261,38 @@ add_unit '^## Phase 3:' 2d
 eq  "fix-unit: wrong id fails"         1 "$(fu check 2c >/dev/null; echo $?)"
 g git checkout -q -- plans/demo
 
+# tick-unit.sh with a base: only the unit's own tasks may be ticked
+R4="$TMP/repo-tick"; mkdir -p "$R4/plans/demo"
+cp "$FX/valid/feature-demo-spec.md" "$R4/plans/demo/"; sed "$untick_all" "$VALID" > "$R4/plans/demo/feature-demo-tasks.md"
+( cd "$R4" && git init -q -b master && git add -A && git commit -qm init )
+tb() { bash "$S/tick-unit.sh" "$R4/plans/demo" "$1" HEAD 2>&1; }
+( cd "$R4" && sedi "$(tick TASK-022);$(tick TASK-023)" plans/demo/feature-demo-tasks.md )
+eq  "tick-unit base: own unit ticked, nothing foreign" 0 "$(tb 2b >/dev/null; echo $?)"
+( cd "$R4" && sedi "$(tick TASK-030)" plans/demo/feature-demo-tasks.md )
+has "tick-unit base: names the foreign tick" "foreign tick: TASK-030" "$(tb 2b)"
+eq  "tick-unit base: foreign tick exits 1" 1 "$(tb 2b >/dev/null; echo $?)"
+
+# check-report.sh
+printf 'x\n\nverdict: pass\n' > "$TMP/rep-ok.md"; : > "$TMP/rep-empty.md"; printf 'no summary here\n' > "$TMP/rep-bad.md"
+eq  "check-report: good report"    0 "$(bash "$S/check-report.sh" "$TMP/rep-ok.md" >/dev/null; echo $?)"
+eq  "check-report: missing file"   1 "$(bash "$S/check-report.sh" "$TMP/nope.md" >/dev/null; echo $?)"
+eq  "check-report: empty file"     1 "$(bash "$S/check-report.sh" "$TMP/rep-empty.md" >/dev/null; echo $?)"
+eq  "check-report: no verdict"     1 "$(bash "$S/check-report.sh" "$TMP/rep-bad.md" >/dev/null; echo $?)"
+
+# approve.sh spec stamps the spec Approved
+mkdir -p "$TMP/specap"; printf -- "---
+title: Demo
+status: 'Draft'
+---
+
+# Spec
+" > "$TMP/specap/feature-demo-spec.md"
+printf "![Status: Draft](https://img.shields.io/badge/status-Draft-lightgrey)\nstatus: Draft in the body\n" >> "$TMP/specap/feature-demo-spec.md"
+bash "$S/approve.sh" "$TMP/specap" spec >/dev/null
+has "approve: spec front matter Approved" "status: 'Approved'" "$(head -12 "$TMP/specap/feature-demo-spec.md")"
+has "approve: spec badge Approved" "![Status: Approved](https://img.shields.io/badge/status-Approved-green)" "$(cat "$TMP/specap/feature-demo-spec.md")"
+has "approve: spec body left alone" "status: Draft in the body" "$(cat "$TMP/specap/feature-demo-spec.md")"
+
 # unit-gate.sh
 ug() { g bash "$S/unit-gate.sh" plans/demo HEAD "$@" 2>&1; }
 eq  "unit-gate: clean unit passes"        "gate: no" "$(ug 0 0)"

@@ -107,7 +107,7 @@ Q01: <question> Blocking: yes | no
 ```
 
 - **P0**: wrong behaviour, data loss, a security hole or a broken contract. Fix before merge.
-- **P1**: a real bug in an edge case, behaviour changed without a test, or a spec contradiction.
+- **P1**: a real bug in an edge case, behaviour changed without a test, or a spec contradiction. A finding you reproduced with a concrete input that gives output the spec or the task row forbids is P1, however small: a P2 never starts a fix round, so a reproduced defect rated P2 ships and fails the phase check later.
 - **P2**: a design or maintainability cost that will hurt within weeks.
 - **P3**: a nit; the author decides.
 

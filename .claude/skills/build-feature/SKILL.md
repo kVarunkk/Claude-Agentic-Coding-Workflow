@@ -77,7 +77,7 @@ Reach consensus with the user on what gets built. Invoke the `aligning-requireme
    ```
 2. **Verify.** `R=$(S/report-path.sh PLAN spec/review)`. Spawn `spec-verifier`: `spec plans/<feature>` and `REPORT: <R>`.
 3. **Fix loop.** While `verdict: fail`, at most `MAX_LOOPS` rounds: spawn a new `spec-writer` with the same PLAN and Brief lines plus `FIX: <R>` and "Fix only the P0 and P1 findings in that file." Then a new `spec-verifier` with a new `REPORT:` and `RECHECK: <R>`. Still failing: show the remaining `top:` lines at the gate.
-4. **Gate.** Show the spec path, the report path, its open questions, any place it departs from the brief, and the P2 notes. Ask each open question in the same `AskUserQuestion` call; the answers go into the change file. Options: Approve / Request changes / Stop, with **Fix the P2 notes** first when p2 is above 0 (as Request changes, the change file listing those P2s and the open-question answers; the gate comes again after the recheck). Approve: `S/approve.sh PLAN spec`. Request changes: write the user's text to `S/report-path.sh PLAN spec/changes`, spawn a new spec-writer with `FIX:` that file, then go to 2.2 with `RECHECK:` the last review. If the change contradicts a brief decision, update the brief first (step 1, Change something).
+4. **Gate.** Show the spec path, the report path, its open questions, any place it departs from the brief, and the P2 notes. Ask each open question in the same `AskUserQuestion` call; the answers go into the change file. Options: Approve / Request changes / Stop, with **Fix the P2 notes** first when p2 is above 0 (as Request changes, the change file listing those P2s and the open-question answers; the gate comes again after the recheck). Log each answer to an open question with `log-decision.sh` (step `spec-gate`, decision `Q-<n>`). Approve: `S/approve.sh PLAN spec` (it stamps the spec `Approved`). Request changes: write the user's text to `S/report-path.sh PLAN spec/changes`, spawn a new spec-writer with `FIX:` that file, then go to 2.2 with `RECHECK:` the last review. If the change contradicts a brief decision, update the brief first (step 1, Change something).
 
 ## 3. Tasks
 
@@ -135,16 +135,17 @@ Repeat until `next-unit.sh` prints nothing:
    Still failing after `MAX_LOOPS` rounds: ask with the remaining findings and the report path: Commit anyway / Give guidance / Stop (AFK: stop). Give guidance: write the user's text to `S/report-path.sh PLAN phase-N/guidance-<unit-id>`, spawn a new implementer with `FIX:` that file, then 4.3.
 5. **Commit.** All of these, in order:
    1. `TEST_CMD` green, run in this step.
-   2. `S/tick-unit.sh PLAN <unit-id>` exits 0.
+   2. `S/tick-unit.sh PLAN <unit-id> <BASE>` exits 0. `foreign tick: ...` means the implementer ticked another unit's task: unlike a stray file it is not a Difference; treat it as a failed review (4.4) with that output as the FIX file, and have the implementer reset the row.
+   2b. `S/check-report.sh <the last review report>` exits 0. A reviewer that saved no report has not reviewed: discard its verdict and run a new review (4.3), at no cost to `MAX_LOOPS`.
    3. `S/stage-unit.sh PLAN <unit-id>` (adds the reports), then `S/patch-id.sh PLAN` equals the `PID` of the last review. Different: the code changed after the review; go back to 4.3.
    4. `S/scan-staged.sh`. Exit 1: show the findings and stop; never commit a secret. Exit 3: ask Commit anyway / Stop (AFK: stop).
    5. **Unit gate.** `S/unit-gate.sh PLAN <BASE> <fix rounds run for this unit> <the second number of the last review's mutations: line>`. Exit 1: stop. Log every `reason:` line with `log-decision.sh` (step `unit-<id>`, decision `gate-reason`), AFK too, so the final Attention section sees them. On `gate: yes`, show the reasons, the last review report and `git diff --cached --stat BASE`, then ask Commit / Request changes / Stop. A logged Difference that weakens or drops a spec test comes first in the question.
       - Commit: go on.
       - Request changes: write the user's text to `S/report-path.sh PLAN phase-N/unit-changes-<unit-id>`, spawn a new implementer with `FIX:` that file, then 4.3. This round does not count toward `MAX_LOOPS`.
       - Stop: leave the change staged; on resume `uncommitted: <unit>` re-reviews it and this gate runs again.
-   6. `git commit -m "feat(<feature>): unit <unit-id>"`. Log it with the commit sha and the review report.
+   6. Log the commit first (`log-decision.sh`, step `unit-<id>`, decision `commit`, evidence the review report path, result `committing`), then `git add PLAN && git commit -m "feat(<feature>): unit <unit-id>"`. Logging after the commit would leave `decisions.tsv` dirty for the next implementer; the sha is in `git log`.
 6. **Phase end.** If `S/phase-done.sh PLAN <unit-id>` exits 0 (or step 0 sent you here with `gate: N`):
-   1. `C=$(S/report-path.sh PLAN phase-N/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature> --phase N` and `REPORT: <C>`.
+   1. `C=$(S/report-path.sh PLAN phase-N/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature> --phase N`, `REPORT: <C>` and `DECISIONS: plans/<feature>/decisions.tsv` (so it knows what the user already decided; it adds its Attention section only in AFK mode).
    2. **Automatic fix unit.** If `verdict: fail` and `S/fix-unit.sh PLAN count N` prints 0:
       1. `ID=$(S/fix-unit.sh PLAN id N)`. Spawn a new `task-writer`: `PLAN: plans/<feature>. Add one unit "## Phase <ID>: Auto-fix <short title>" for the P0 and P1 gaps in <C>, placed after phase N's last unit, depending on phase N's units, at most MAX_UNIT_TASKS tasks. Add traceability rows for its tasks. Change nothing else.`
       2. Run `S/check-plan.sh PLAN` and `S/fix-unit.sh PLAN check <ID>`. A FAIL: one new task-writer round with `FIX:` that output written to `S/report-path.sh PLAN phase-N/fix-unit-check`; still failing: stop.
@@ -168,7 +169,7 @@ Repeat until `next-unit.sh` prints nothing:
 
 1. Run `TEST_CMD`. Red: stop (not AFK: show it and ask).
 2. **Run it for real.** Tests alone are not enough. Run the feature's entry point once with the spec's own example (the CLI command, the request, the script) and keep the command and its output. If the spec names no runnable example, say so.
-3. `F=$(S/report-path.sh PLAN final/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature>` and `REPORT: <F>`, plus in AFK mode `DECISIONS: plans/<feature>/decisions.tsv` (it adds an Attention section).
+3. `F=$(S/report-path.sh PLAN final/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature>` and `REPORT: <F>` and `DECISIONS: plans/<feature>/decisions.tsv` (in AFK mode it adds an Attention section).
 4. `FR=$(S/report-path.sh PLAN final/report)`. Write: units and commits, links to every phase report, the final conformance SUMMARY, the real run (command and output), every finding still open (p0, p1, P2 notes), and in AFK mode the matcher's Attention section. Commit it.
 5. **Final gate.** Show the report path and the summary. Options:
    - **Accept**: `S/approve.sh PLAN final`, commit the marker, go to 6.

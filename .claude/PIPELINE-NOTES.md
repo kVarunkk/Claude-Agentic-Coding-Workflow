@@ -189,6 +189,18 @@ Worked: brief to accepted in 50 min, 3 units, no P0/P1 anywhere. R14 Guard marke
 - R21. The unit-1b reviewer left `$TMPDIR/mut-1b` locked by a background process and its notification read "waiting on its own background work". FIXED: code-reviewer runs everything in the scratch copy in the foreground and deletes it before its SUMMARY; build-feature clears `$TMPDIR/mut-<unit>*` before each review.
 - Not fixed (minor): PR question asked with no `origin` remote; stray `· summary` at the end of some orchestrator messages; the SessionStart error is the user's global hook calling `powershell` from Git Bash, not the pipeline.
 
+### Run 5 findings (2026-11-17, pipeline-toy-5, greet-options, AFK end to end)
+
+Worked: AFK from the tasks gate to the final gate in one session, 8 units (2 auto-fix units 1c and 3c), 43 tests, final conformance pass. The lead rejected a reviewer pass that saved no report and caught a foreign tick; both by hand.
+
+- R22. Unit 3b's reviewer reproduced a real bug (`k in DEFAULTS` misses `constructor`) but rated it P2; P2 starts no fix round, so it was committed and failed the phase check as P1 (extra unit 3c). FIXED: reviewing-code severity says a defect reproduced with a concrete input that breaks the spec or task row is P1.
+- R23. The unit-2a implementer ticked TASK-031 (phase 3). Found only at the phase 2 check, after the commit. FIXED: `tick-unit.sh <plan> <unit> <base>` fails with `foreign tick: <ids>` when another unit's row changed since base (tested); build-feature 4.5 passes BASE; implementer rule 6 names the case.
+- R24. The first 2a reviewer returned a pass but could not write its report. FIXED: `check-report.sh <report>` (exists, non-empty, has a verdict line) is a commit precondition (tested).
+- R25. The spec stayed `Draft` with Q-5 open after the user answered and approved; the matcher flagged it in three reports and said Q-5 was applied without the user. FIXED: `approve.sh spec` stamps the front matter and badge `Approved` (tested); spec-gate answers are logged as `Q-<n>` decisions; every phase matcher gets `DECISIONS:` and treats a `Q-<n>` row as resolved.
+- R26. `decisions.tsv` was dirty from unit 2a to the end (logged after each commit). FIXED: the commit is logged before `git commit`, so the row rides in the unit commit.
+- R27. The 2b implementer ended "waiting on its own background work"; 3c skipped its "Done when" run. FIXED: implementer rules 7 (foreground only) and 8 (run Done when).
+- Not fixed: the SessionStart `powershell: command not found` is the user's global hook under Git Bash (same as run 4). Change it there to `powershell.exe` or `pwsh`.
+
 Next dry run (run 2): checks 3, 6, 8, plus the new paths: AFK run end to end, a fresh-agent fix round (`FIX:` spawn), a `stage-unit.sh` stray stop (touch an extra file during a unit), the final gate and the PR step (needs a remote; else check it stops cleanly without one). Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit (expect `uncommitted: <unit>` on resume).
 
 ## Decisions taken 2026-11-15 (session 2)
