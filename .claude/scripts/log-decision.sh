@@ -4,7 +4,7 @@
 # Tabs and newlines inside a field become spaces.
 set -u
 usage="usage: log-decision.sh <plan-dir> <step> <decision> <why> <evidence> <result>"
-[ $# -eq 6 ] || { echo "$usage" >&2; exit 1; }
+[ $# -eq 6 ] || { echo "got $# argument(s), want 6 after the plan dir (step decision why evidence result)" >&2; echo "$usage" >&2; exit 1; }
 plan="${1%/}"; shift
 [ -d "$plan" ] || { echo "no such plan dir: $plan" >&2; exit 1; }
 f="$plan/decisions.tsv"

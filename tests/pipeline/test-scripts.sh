@@ -59,6 +59,21 @@ eq "phase-done: 2a never ends the phase even when 2 is done" 1 "$(pd phase2-done
 eq "phase-done: unknown unit exits 1"                1 "$(pd partial 9z)"
 eq "phase-done: malformed exits 1"                   1 "$(pd malformed 1)"
 
+# ---- check-plan.sh: invisible characters ----
+mkdir -p "$TMP/bom" && cp "$FX/valid/"* "$TMP/bom/"
+printf '%b' '\0357\0273\0277' >> "$TMP/bom/feature-demo-tasks.md"
+eq "check-plan: raw U+FEFF fails" 1 "$(bash "$S/check-plan.sh" "$TMP/bom" >/dev/null 2>&1; echo $?)"
+has "check-plan: names invisible characters" "invisible characters" "$(bash "$S/check-plan.sh" "$TMP/bom" 2>&1)"
+
+# ---- log-decision.sh: arity ----
+has "log-decision: wrong arity names the count" "got 5 argument(s)" "$(bash "$S/log-decision.sh" "$TMP/bom" a b c d 2>&1)"
+
+# ---- approve.sh final sets tasks status ----
+mkdir -p "$TMP/fin" && cp "$FX/valid/"* "$TMP/fin/"
+awk '{ print } /^goal:/ { print "status: '"'"'Planned'"'"'" }' "$FX/valid/feature-demo-tasks.md" > "$TMP/fin/feature-demo-tasks.md"
+bash "$S/approve.sh" "$TMP/fin" final >/dev/null
+has "approve: final marks the tasks file Done" "status: 'Done'" "$(cat "$TMP/fin/feature-demo-tasks.md")"
+
 # ---- tick-unit.sh ----
 tu() { bash "$S/tick-unit.sh" "$TMP/$1" "$2" 2>&1; }
 eq "tick-unit: fully ticked unit exits 0"  0 "$(tu partial 1 >/dev/null; echo $?)"

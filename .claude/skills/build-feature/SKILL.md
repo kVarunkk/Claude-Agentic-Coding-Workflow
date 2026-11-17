@@ -43,7 +43,8 @@ The user turns it on only at the tasks gate ("Approve and run to the end"), whic
 ## 0. Resume
 
 1. Run `S/branch.sh PLAN`. Exit 0: go on. Exit 3 (another branch): ask Continue on this branch / Stop. Exit 1: show the error and stop.
-2. Run `S/status.sh PLAN`. Start at the first line that applies; never redo approved work:
+2. Run `git remote get-url origin`. None: tell the user once that step 6 (PR) will not be possible, and carry on.
+3. Run `S/status.sh PLAN`. Start at the first line that applies; never redo approved work:
 
 | Status | Go to |
 |---|---|
@@ -109,8 +110,10 @@ Repeat until `next-unit.sh` prints nothing:
    Implement only these tasks.
    ```
    If the hook blocks the spawn, show the reason to the user and stop. Do not retry with a different unit.
+   If the reply has no `tasks done` line (for example just "pending"), do not trust it: run `TEST_CMD` and `S/tick-unit.sh PLAN <unit-id>` yourself and log it (decision `empty-report`). Carry on only if both pass; else treat the unit as failed (4.4).
 3. **Stage and review.**
    1. `S/stage-unit.sh PLAN <unit-id>`. Exit 1 (files outside the unit): write its output to `S/report-path.sh PLAN phase-N/stray-<unit-id>` and treat it as a failed review (4.4).
+   1b. `S/tick-unit.sh PLAN <unit-id> <BASE>` now, before any review. `foreign tick: ...` goes to the fix loop (4.4) with that output as the FIX file, without spawning a reviewer.
    2. `PID=$(S/patch-id.sh PLAN)`. `R=$(S/report-path.sh PLAN phase-N/review-<unit-id>)`. Run `rm -rf "$TMPDIR"/mut-<unit-id>*` so a scratch copy left by an earlier reviewer cannot block this one (`scratch-copy.sh` refuses an existing folder).
    3. Spawn `code-reviewer`:
       ```
@@ -172,7 +175,7 @@ Repeat until `next-unit.sh` prints nothing:
 3. `F=$(S/report-path.sh PLAN final/conformance)`. Spawn `spec-matcher`: `PLAN: plans/<feature>` and `REPORT: <F>` and `DECISIONS: plans/<feature>/decisions.tsv` (in AFK mode it adds an Attention section).
 4. `FR=$(S/report-path.sh PLAN final/report)`. Write: units and commits, links to every phase report, the final conformance SUMMARY, the real run (command and output), every finding still open (p0, p1, P2 notes), and in AFK mode the matcher's Attention section. Commit it.
 5. **Final gate.** Show the report path and the summary. Options:
-   - **Accept**: `S/approve.sh PLAN final`, commit the marker, go to 6.
+   - **Accept**: `S/approve.sh PLAN final` (it sets the tasks file status to Done), commit the marker and the tasks file, go to 6.
    - **Request changes**: write the text to `S/report-path.sh PLAN final/changes`, add a `Changes` unit to the last phase as in 4.6.2, and go back to 4. AFK stays on.
    - **Roll back to a phase tag**: list the `<feature>-phase-*` tags. The user runs `! git reset --hard <tag>` themselves; then rerun `/build-feature <feature>`.
    - **Stop.**

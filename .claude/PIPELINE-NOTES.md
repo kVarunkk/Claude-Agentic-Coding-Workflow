@@ -201,6 +201,18 @@ Worked: AFK from the tasks gate to the final gate in one session, 8 units (2 aut
 - R27. The 2b implementer ended "waiting on its own background work"; 3c skipped its "Done when" run. FIXED: implementer rules 7 (foreground only) and 8 (run Done when).
 - Not fixed: the SessionStart `powershell: command not found` is the user's global hook under Git Bash (same as run 4). Change it there to `powershell.exe` or `pwsh`.
 
+### Run 6 findings (2026-11-17, pipeline-toy-6, greet-options, AFK)
+
+Worked: brief to final in one session, 41 tests, survived a 5-hour usage-limit pause; the tasks verifier found two untested spec clauses (REQ-034 BOM, SEC-001 JSON.parse only); the reviewer's mutations and the lead's own grep caught a false "fixed" report. Cost: 4 task-writer and 4 task-verifier rounds, about 25 agent spawns for 11 tasks.
+
+- R28. The task-writer had no Edit, so each fix rewrote the file with Write, which decodes a backslash-u escape into a raw U+FEFF. The BOM test then read as contradicting another test (F07 P1) and used up MAX_LOOPS. FIXED: writers get Edit; writing-tasks and task-writer forbid invisible characters in plan text; `check-plan.sh` fails on U+FEFF and zero-width characters (tested).
+- R29. The spec-writer added unrequested BOM stripping (REQ-034), which forced a BOM test downstream. FIXED: spec-writer rule: no behaviour beyond the brief, an Open question instead. The verifier already rates a silent decision P1.
+- R30. The foreign tick on TASK-015 was found by the reviewer, after a wasted review. FIXED: build-feature 4.3.1b runs `tick-unit.sh <plan> <unit> <BASE>` before the reviewer.
+- R31. An implementer replied only "pending" (unit 2a). FIXED: build-feature 4.2 says to run TEST_CMD and tick-unit yourself when the reply has no `tasks done` line, and log `empty-report`.
+- R32. A `log-decision.sh` call with 5 arguments failed with only the usage line. FIXED: the error now says how many arguments it got.
+- R33. Tasks front matter stayed `Planned` after every task was ticked; the missing `origin` remote was found only at the PR step. FIXED: `approve.sh final` sets the tasks status to Done (tested); build-feature step 0 checks `origin` and tells the user once.
+- Not fixed: the SessionStart `powershell: command not found` is still the user's global hook (R11): in `~/.claude/settings.json` use `powershell.exe`. P2 test-strength notes (weak spawn tests) still ride to the final report in AFK; an optional cleanup unit is an open idea.
+
 Next dry run (run 2): checks 3, 6, 8, plus the new paths: AFK run end to end, a fresh-agent fix round (`FIX:` spawn), a `stage-unit.sh` stray stop (touch an extra file during a unit), the final gate and the PR step (needs a remote; else check it stops cleanly without one). Use `scripts/seed-red.sh` during an implementer and kill/restart mid-unit (expect `uncommitted: <unit>` on resume).
 
 ## Decisions taken 2026-11-15 (session 2)

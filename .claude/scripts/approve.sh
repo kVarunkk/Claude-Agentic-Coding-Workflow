@@ -4,6 +4,7 @@
 # Names: brief, spec, tasks, phase-<N> (N = numeric phase), afk, final. Run only after the user approved.
 # brief also sets "status: agreed" in the brief's front matter, so the brief is never committed as draft.
 # spec likewise sets the spec's status to Approved (front matter and badge).
+# final sets the tasks file status to Done (front matter and badge).
 set -u
 usage="usage: approve.sh <plan-dir> brief|spec|tasks|phase-<N>|afk|final"
 plan="${1:?$usage}"
@@ -34,6 +35,18 @@ if [ "$name" = spec ]; then
       fm && !done && /^status:/ { print "status: '"'"'Approved'"'"'"; done = 1; next }
       /^!\[Status: Draft\]/ { sub(/Draft/, "Approved"); sub(/lightgrey/, "green"); sub(/status-Draft/, "status-Approved") }
       { print }' > "$tmp" && mv "$tmp" "$spec"
+  fi
+fi
+if [ "$name" = final ]; then
+  tf=$(ls "$plan"/feature-*-tasks.md 2>/dev/null | head -1)
+  if [ -n "$tf" ]; then
+    tmp=$(mktemp)
+    tr -d '' < "$tf" | awk '
+      NR == 1 && /^---[ 	]*$/ { fm = 1; print; next }
+      fm && /^---[ 	]*$/ { fm = 0; print; next }
+      fm && !done && /^status:/ { print "status: '"'"'Done'"'"'"; done = 1; next }
+      /^!\[Status: [A-Za-z]+\]/ { sub(/Status: [A-Za-z]+/, "Status: Done"); sub(/status-[A-Za-z]+-[a-z]+/, "status-Done-green") }
+      { print }' > "$tmp" && mv "$tmp" "$tf"
   fi
 fi
 mkdir -p "$plan/approvals"

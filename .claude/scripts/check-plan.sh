@@ -63,6 +63,11 @@ if [ -n "$undeclared" ]; then
   echo "WARN: ids referenced but never declared:"; echo "$undeclared" | sed 's/^/  /'; warn=1
 fi
 
+inv=$(LC_ALL=C grep -nE "$(printf '%b' '\0357\0273\0277|\0342\0200[\0213-\0215]|\0342\0201\0240')" "$spec" "$tasks" 2>/dev/null)
+if [ -n "$inv" ]; then
+  echo "FAIL: invisible characters (U+FEFF or zero-width) in the plan; name them in words instead:"; echo "$inv" | cut -c1-120 | sed 's/^/  /'; fail=1
+fi
+
 ph=$(grep -nE "TBD|TODO|<YYYY-MM-DD>|<feature>|<one sentence|<area>|<repo or team>" "$spec" "$tasks")
 if [ -n "$ph" ]; then
   echo "WARN: placeholders or TODO/TBD left:"; echo "$ph" | sed 's/^/  /'; warn=1
