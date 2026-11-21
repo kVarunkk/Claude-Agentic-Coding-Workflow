@@ -11,7 +11,7 @@ Target: **$ARGUMENTS**. Mode `spec` reviews `feature-<feature>-spec.md`. Mode `t
 Do not edit the plan files. Report findings; the writer fixes them. The only file you write is your report.
 
 **Narrower modes** (from the pipeline prompt):
-- `RECHECK: <previous report>`: a fix round ran. Check only (a) each P0 and P1 finding of that report, marked `fixed` or `open`, and (b) new P0 or P1 problems the fix introduced. Report no new P2s; carry the old P2s over unchanged. This makes fix rounds converge.
+- `RECHECK: <previous report>`: a fix round ran. Check only (a) each P0 and P1 finding of that report, marked `fixed` or `open`, and (b) new P0 or P1 problems the fix introduced. A problem is "introduced" only if it sits in text the fix round changed: see what changed with `git diff <commit of the previous review's round> -- <file>` (build-feature commits the plan after each writer round; `git log --oneline -- <file>` lists them). A problem in unchanged text that the earlier reviews missed is reported as a P2 note marked `pre-existing`, not a P1, unless it is a P0; the gate shows it to the user. Report no new P2s otherwise; carry the old P2s over unchanged. Do not rerun the full design and challenge passes. This makes fix rounds converge (R59).
 - `UNIT: <id>` (tasks mode): review only that added unit: its tasks against the findings it was added for, the spec ids it cites, its Files, `depends:` and size, and the script output. Do not re-review the rest of the file.
 
 ## 1. Load
@@ -27,13 +27,13 @@ Run from the repo root: `bash .claude/scripts/check-plan.sh plans/<feature>`. Ev
 ## 3. Self-review
 
 0. **Brief (spec mode).** Every brief decision, scope line, out-of-scope line and constraint is honoured. A spec line that contradicts the brief, or drops a brief decision, is P0. Behaviour the brief marks out of scope is P0. A decision the spec took that the brief never covered and that changes what gets built, without an Open question, is P1.
-1. **Testable.** Every REQ and SEC id is one statement with an exact value, and you can picture its test.
+1. **Testable.** Every REQ and SEC id is one statement with an exact value, and you can picture its test. A negative id ("no network connection", "writes no file", "never evaluated") with no bounded check named in it (a static import ban, a spy on named calls) is **P1** in spec mode: no test can prove it in full, so the code review chases it round after round (R64).
 2. **Coverage (tasks mode).** Every REQ and SEC id maps to a task whose Task text actually builds it, and every task maps to a spec id. The script checks ids; you check meaning. Every part of each REQ and SEC id also has a test that will check it. A Decisions-taken row or Task cell that leaves part of a REQ or SEC id to code review, reading the code or manual checking, with no test, is **P1**: the conformance check grades that part Untested or Partial (`checking-spec-conformance`, "A logged test change is not Accepted"), so the plan must grade it the same way now.
 3. **Task scan (tasks mode).** Every Task cell allows one reasonable implementation and names its tests. No "handle edge cases". A test that will pass as soon as it is written (earlier code already gives the behaviour) must be marked `**Guard:**`, not `**Red:**`; an unmarked one is P2.
 4. **Unit size and order (tasks mode).** No unit above `MAX_UNIT_TASKS` (`.claude/pipeline.conf`). Each unit ends green and runnable. `depends:` matches real dependencies.
 5. **Files (tasks mode).** Each task's Files column names every file it must touch, tests included. Units that share the same `depends:` set must list disjoint files.
 6. **Names.** Files, functions, types, constants and routes are spelled the same in both files and across tasks.
-7. **Proportion.** The plan fits the behaviour asked for. Flag shared infrastructure with one consumer and unrequested scope.
+7. **Proportion.** The plan fits the behaviour asked for. Flag shared infrastructure with one consumer and unrequested scope. In tasks mode, a unit whose `**Red:**` tests would all pass given the earlier units' Green steps (an end-to-end layer over behaviour already built and tested at the unit seam) is **P1**: fold those tests into the unit that builds the behaviour. Run 11 had two such units out of 11 (R66).
 8. **No placeholders** (`<…>`, TODO, TBD) outside Open questions.
 
 ## 4. Challenge pass

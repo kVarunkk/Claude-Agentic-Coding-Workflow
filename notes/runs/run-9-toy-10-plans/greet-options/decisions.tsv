@@ -1,0 +1,10 @@
+ts	step	decision	why	evidence	result
+2026-11-19T07:48:06Z	spec-gate	Q-1	user approved 20-decision brief	ask_user: Agree	agreed
+2026-11-19T07:49:30Z	spec	restart	spec-writer stopped early: no summary, no spec file written	git diff --stat showed no change	restarting with a new spec-writer
+2026-11-19T08:09:32Z	spec	restart	spec-verifier stopped early: report left as verdict: pending skeleton	check-report.sh exit 1 on reports/spec/review.md	restarting with a new spec-verifier and PARTIAL
+2026-11-19T08:13:41Z	spec	restart	spec-verifier review-2 quoted the skeleton phrase in its prose, so check-report.sh still sees a pending verdict line	check-report.sh exit 1: verdicts were fail and pending	restarting with a fresh spec-verifier
+2026-11-19T08:24:13Z	spec	restart	spec-verifier review-5 stopped early: report left as the pending skeleton	check-report.sh exit 1 on reports/spec/review-5.md	restarting with a fresh spec-verifier and PARTIAL
+2026-11-19T08:43:37Z	spec	restart	spec-verifier review-7 stopped early: full re-analysis consumed the turn budget before the report was written	check-report.sh exit 1 on reports/spec/review-7.md	restarting with a narrow-scope verifier
+2026-11-19T09:27:31Z	tasks	restart	task-writer stopped early: no tasks file written	git diff --stat showed no change	restarting with a new task-writer
+2026-11-19T09:36:45Z	tasks	stop	task-writer stopped early on four models (grok, minimax twice, haiku); no tasks file written	git diff --stat -- plans/greet-options/feature-greet-options-tasks.md shows no change; haiku returned an empty response twice	stopped for the user
+2026-11-19T09:41:14Z	tasks	stop	user chose to stop rather than shrink the task-writer job	ask_user: Stop here	stopped

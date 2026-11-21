@@ -1,0 +1,32 @@
+ts	step	decision	why	evidence	result
+2026-11-19T14:31:14Z	brief	agreed	User agreed the brief: 16 decisions	plans/greet-options/feature-greet-options-brief.md	approved
+2026-11-19T14:50:42Z	spec-gate	Q-1	times range is 1 to 5 inclusive	user answer at spec gate	confirmed
+2026-11-19T14:50:43Z	spec-gate	Q-2	command-line lang/format stay case-sensitive	user answer at spec gate	confirmed
+2026-11-19T14:50:43Z	spec-gate	Q-3	a name value starting with -- is a usage error	user answer at spec gate	confirmed
+2026-11-19T14:50:44Z	spec-gate	gate-reason	Fix the P2 notes (F07-F16)	p2 above 0 at the spec gate	spec-writer round started
+2026-11-19T15:04:08Z	spec-fix-round	fix-round	MAX_LOOPS reached, user allowed one more round for F20 and F17	plans/greet-options/reports/spec/review-5.md	spec-writer round started
+2026-11-19T15:19:42Z	tasks-review	restart	task-verifier hit its turn limit before writing the report	plans/greet-options/reports/tasks/review.md	new verifier spawned
+2026-11-19T16:10:59Z	tasks-fix-round	fix-round	MAX_LOOPS reached, user allowed one more round for F16	plans/greet-options/reports/tasks/review-4.md	task-writer round started
+2026-11-19T16:15:18Z	tasks-review	restart	task-verifier hit its turn limit again before writing the recheck report	plans/greet-options/reports/tasks/review-5.md	new verifier spawned with a narrow recheck scope
+2026-11-19T16:20:16Z	tasks-review	stop	task-verifier stopped early twice on the tasks recheck; a third spawn is not allowed	plans/greet-options/reports/tasks/review-6.md	needs user decision
+2026-11-19T16:48:23Z	tasks-gate	gate-reason	Approve and run to the end (AFK)	user chose AFK at the tasks gate	afk enabled
+2026-11-19T16:55:47Z	unit-1	fix-round	verdict fail: F01 the catch-only-UsageError rule has no test	plans/greet-options/reports/phase-1/review-1.md	implementer fix round started
+2026-11-19T17:02:36Z	unit-1	gate-reason	difference logged: TASK-010 module stub created first so the Red failed on assertions, not an import error	plans/greet-options/reports/phase-1/review-1-2.md	logged
+2026-11-19T17:02:36Z	unit-1	gate-reason	difference logged: TASK-010 a flag value may itself hold an = (--name A=B)	plans/greet-options/reports/phase-1/review-1-2.md	logged
+2026-11-19T17:02:36Z	unit-1	gate-reason	difference logged: TASK-011 the usage error message names the offending flag; never printed	plans/greet-options/reports/phase-1/review-1-2.md	logged
+2026-11-19T17:02:36Z	unit-1	gate-reason	difference logged: TASK-011 fix round F01 guards the catch-only-UsageError rule with a --require preload test	plans/greet-options/reports/phase-1/review-1-2.md	logged
+2026-11-19T17:02:36Z	unit-1	gate-reason	1 fix round(s) ran	plans/greet-options/reports/phase-1/review-1-2.md	logged
+2026-11-19T17:02:36Z	unit-1	commit	unit 1 reviewed pass, gated by AFK	plans/greet-options/reports/phase-1/review-1-2.md	committing
+2026-11-19T17:14:58Z	unit-2	fix-round	verdict fail: F01 the REQ-005 missing-value rule is unguarded for --times/--lang/--format	plans/greet-options/reports/phase-1/review-2.md	implementer fix round started
+2026-11-19T17:15:16Z	unit-2	empty-report	reviewer wrote 'Verdict: changes-requested', which check-report.sh does not accept, so its verdict does not count	plans/greet-options/reports/phase-1/review-2.md	new reviewer spawned
+2026-11-19T17:19:56Z	unit-2	fix-round	verdict fail: F01 the REQ-005 missing-value rule is unguarded for --times/--lang/--format	plans/greet-options/reports/phase-1/review-2-2.md	implementer fix round started
+2026-11-19T17:22:24Z	unit-2	gate-reason	difference logged: TASK-020 fix round F01 guards the REQ-005 missing-value rule for --times/--lang/--format	plans/greet-options/reports/phase-1/review-2-2.md	logged
+2026-11-19T17:22:24Z	unit-2	gate-reason	1 fix round(s) ran	plans/greet-options/reports/phase-1/review-2-2.md	logged
+2026-11-19T17:26:20Z	unit-2	gate-reason	difference logged: TASK-020 the new usage errors name the offending argument; never printed	plans/greet-options/reports/phase-1/review-2-3.md	logged
+2026-11-19T17:26:20Z	unit-2	gate-reason	difference logged: TASK-020 fix round F01 guards the missing-value rule for --times/--lang/--format	plans/greet-options/reports/phase-1/review-2-3.md	logged
+2026-11-19T17:26:20Z	unit-2	gate-reason	difference logged: TASK-021 the -- argument is reported as an unknown argument	plans/greet-options/reports/phase-1/review-2-3.md	logged
+2026-11-19T17:26:20Z	unit-2	gate-reason	difference logged: TASK-021 --shout=true is reported as an unknown flag	plans/greet-options/reports/phase-1/review-2-3.md	logged
+2026-11-19T17:26:20Z	unit-2	gate-reason	1 fix round(s) ran	plans/greet-options/reports/phase-1/review-2-3.md	logged
+2026-11-19T17:26:20Z	unit-2	commit	unit 2 reviewed pass, gated by AFK	plans/greet-options/reports/phase-1/review-2-3.md	committing
+2026-11-19T17:38:56Z	unit-3	empty-report	reviewer hit its iteration limit before writing the report file; its verdict does not count	plans/greet-options/reports/phase-1/review-3.md	new reviewer spawned
+2026-11-19T17:44:09Z	unit-3	stop	code-reviewer hit its iteration limit twice on this unit's review without writing its report; a third spawn is not allowed	plans/greet-options/reports/phase-1/review-3-2.md	needs user decision

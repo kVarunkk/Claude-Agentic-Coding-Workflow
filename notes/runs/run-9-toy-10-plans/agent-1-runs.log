@@ -1,0 +1,4 @@
+2026-11-19T13:02:12  agent-1 package-structure@ceaa102  dirty: none
+2026-11-19T15:02:55  agent-1 package-structure@ceaa102  dirty: 2
+     M dostuff/cli_tui.py
+     M tests/test_tui.py

@@ -12,6 +12,8 @@
  └─ final: spec-matcher → final gate → optional PR (asks first)
 ```
 
+Already have a spec and a task list? Run `/build-feature <feature> --from <spec-file> <tasks-file>`. It skips the interview and the writing: your files are reformatted to the pipeline format, you review the diff at the spec and tasks gates, and the build runs as usual. See [docs/bring-your-own-plan.md](docs/bring-your-own-plan.md).
+
 Hooks enforce the order: no spec before the brief is agreed, the implementer only gets the next open unit, the next phase waits for approval, implementers can't stop while tests are red, and there are no force-pushes, amends or tag rewrites. `.claude/PIPELINE-NOTES.md` has the full rule table and the design history.
 
 ## Requirements
@@ -55,19 +57,29 @@ Then:
 
 All state lives in `plans/<feature>/` and git, so after a stop or crash you can resume with `/build-feature <feature-name>`.
 
+### dostuff instead of Claude Code
+
+`bash install-dostuff.sh /path/to/your-project` installs the same pipeline under `.dostuff/`, converted from `.claude/` (paths, tool names, `maxTurns` to `max_iterations`, hooks into `.dostuff/config.yaml`). `.claude/` stays the only source: never edit an installed `.dostuff/` by hand. The install writes `.dostuff/.installed-from` (the source commit), and `bash install-dostuff.sh --check /path/to/your-project` reports drift between the two.
+
+For a dostuff dry run on Windows, `.\dostuff-toy.ps1 <name>` builds `..\<name>` (a toy repo with the dostuff install) on first use and starts dostuff in it from the `..\agent-1` checkout. `-Sync` refreshes the pipeline, `-Rebuild` starts over, and arguments after `--` go to dostuff.
+
 ## Repo layout
 
 ```
 .claude/
   agents/       spec-writer, spec-verifier, task-writer, task-verifier, implementer, code-reviewer, spec-matcher
-  hooks/        check-spawn.sh (Agent), check-git.sh (Bash), implementer-stop.sh (implementer Stop)
+  hooks/        check-spawn.sh (Agent, SendMessage), check-write.sh (Write, Edit, MultiEdit), check-git.sh (Bash),
+                implementer-stop.sh (implementer Stop)
   scripts/      deterministic helpers the orchestrator and hooks call (status, next unit, staging, scanning, ...)
   skills/       build-feature plus the skills the agents preload
   settings.json hook registration and allow rules
   pipeline.conf per-project settings
+docs/           bring-your-own-plan.md (build from your own spec and tasks)
 tests/pipeline/ script and hook tests, fixtures, make-toy.sh (toy repo for dry runs)
-notes/          design notes (orchestration, plugin layout)
+notes/          design notes (orchestration, plugin layout), run findings, runs/ (run transcripts)
 install.sh      copy the pipeline into another project
+install-dostuff.sh  the same for dostuff (.dostuff/), with --check for drift
+dostuff-toy.ps1 build a dostuff toy and start dostuff in it (Windows)
 ```
 
 ## Tests
@@ -81,6 +93,8 @@ For an end-to-end dry run, run `bash tests/pipeline/make-toy.sh` to create a tin
 
 ## Known limitations
 
-- Some rules are enforced only by the prompt, not by a hook. These include "only the user answers gates", "fresh agent per fix round", and "push and PR only after a yes". See the rule table in `PIPELINE-NOTES.md`.
+- Some rules are enforced only by the prompt, not by a hook. These include "only the user answers gates" and "push and PR only after a yes". See the rule table in `PIPELINE-NOTES.md`.
+- `check-spawn.sh` blocks every `SendMessage` in the project (pipeline agents are never resumed). Set `PIPELINE_ALLOW_RESUME=1` in the environment to allow resumes for other work.
+- In a plan whose brief is agreed, `check-write.sh` stops the main session from writing agents' reports, the spec and the tasks file (subagent calls carry `agent_type` and pass). To edit a plan by hand in Claude, set `PIPELINE_ALLOW_WRITE=1`, or edit it outside Claude. Writes through the shell are not caught.
 - Keep Claude Code agent teams off (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` unset). They change how named subagents launch.
 - Tested end to end on Windows only so far. On macOS and Linux, only the CI unit tests have run.

@@ -15,7 +15,7 @@ Send them in one message, at most 8. Each prompt says: read-only, no repository 
 | Reviewer | When | Brief |
 |---|---|---|
 | Correctness | always | Read the diff line by line, partition by partition (list them). Use lenses.md §§ 3, 7. |
-| Test adversary | always | lenses.md § 1. May write and run probes only under the scratchpad or `$TMPDIR`. Return each probe: the wrong implementation it targets, the input, expected vs actual, and `defect` / `test gap` / `covered`. |
+| Test adversary | always | lenses.md § 1. May write and run probes only under the scratchpad or `${TMPDIR:-/tmp}`. Return each probe: the wrong implementation it targets, the input, expected vs actual, and `defect` / `test gap` / `covered`. |
 | Security | security boundary touched, or `--deep` | lenses.md § 4. Name the category for each finding, and list categories checked and clean. |
 | Spec | a spec or task exists | lenses.md § 5. End with: `matches spec`, `partial: N gaps`, `exceeds spec: N items` or `no spec provided`. |
 | Design / data shape | the change crosses a module boundary, adds to a shared structure, or `--deep` | lenses.md §§ 2, 6. |

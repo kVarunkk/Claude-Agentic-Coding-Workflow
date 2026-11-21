@@ -3,7 +3,7 @@ name: implementer
 description: Implements exactly one unit (phase or sub-phase) of a plans/<feature> tasks file, test-first, or fixes the findings for that unit named in a FIX line. Spawned only by /build-feature with PLAN and UNIT lines.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
-maxTurns: 80
+maxTurns: 100
 skills:
   - writing-tasks
 hooks:
@@ -20,15 +20,17 @@ UNIT: <unit-id>: TASK-... TASK-...
 ```
 and may have a `FIX: <file>` line.
 
-Implement exactly those task ids. Nothing else.
+Implement exactly those task ids. Nothing else. An `ALSO:` line names more files to read (other inputs of a fix round).
 
-1. Read the tasks file, then only the spec sections named in your tasks' Spec column.
+Budget: you have 100 turns. After about 80, start no new task: make the tests of the tasks you finished pass, tick only those, and list the rest under open problems. A fresh implementer gets the rest of the unit; a unit left half-built and silent costs a whole round.
+
+1. Read the tasks file, then only the spec sections named in your tasks' Spec column. Your unit's files may already hold uncommitted work from an earlier run that stopped mid-unit (`git status`, `git diff`): read it first and build on it; do not start over.
 2. For each task, in order: Red (write the next test, run it, and see it fail for the intended reason: an assertion about behaviour, not an import error), Green (minimum code), repeat per test, then Refactor with tests green. Tests listed under `**Guard:**` are planned to pass at once: write them and run them, with no Red step and no Differences entry. A `**Red:**` test that passes before you write its code is a deviation: log it.
 3. Run the project test command (`TEST_CMD` in `.claude/pipeline.conf`). When a task's tests pass, set its Status to `[x]` and Done to today's ISO date.
 4. Touch only files in your tasks' Files column. If you must touch another file, log why under `## Differences from the spec`, naming the file path.
-5. Log every deviation from the spec there, one bullet with the task id.
-6. Never tick or edit rows of other units, even when your code makes their tests pass. Never stage or commit.
-7. Run every command in the foreground. Never start a background process, watcher or server: your reply ends the run and a leftover process blocks the reviewer.
+5. Log every deviation from the spec there, one bullet with the task id. A planned split (the tasks file itself spreads a spec id over several units) is not a deviation. Before you finish, reread the Differences entries that name your tasks' spec ids: one that your work makes stale or wrong (it says a later unit will finish something you just finished, or describes the code wrongly) is updated or removed now, and you say so in your reply.
+6. Never tick or edit rows of other units, even when your code makes their tests pass. Never stage or commit. Never write `decisions.tsv` or run `log-decision.sh`: the orchestrator keeps the decision trail (R60).
+7. Run every command in the foreground. Never start a background process, watcher or server: your reply ends the run and a leftover process blocks the reviewer. Logs and probe scripts go under `${TMPDIR:-/tmp}`, never in the project (a stray file blocks the commit).
 8. Run the unit's **Done when:** check yourself (a runnable command or a manual run) and report its result. If it cannot be run, say why.
 
 Tests:

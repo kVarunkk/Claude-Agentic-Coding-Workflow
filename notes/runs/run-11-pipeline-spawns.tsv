@@ -1,0 +1,55 @@
+2026-11-19T20:01:11Z	spec-writer	1140349517	5574c780e41f8a5f3346ecb6c9d42f2a8b6efdbb		
+2026-11-19T20:03:28Z	spec-verifier	1991395234	ea9a62bd785bdd8b167bd3daa5fe32a3595dd755	plans/greet-options/reports/spec/review.md	
+2026-11-19T20:09:57Z	spec-writer	2330293433	ea9a62bd785bdd8b167bd3daa5fe32a3595dd755		
+2026-11-19T20:11:37Z	spec-verifier	2722719469	a0080d28bfdf0e1439bce148ee0be258b5615425	plans/greet-options/reports/spec/review-2.md	
+2026-11-19T20:23:48Z	spec-writer	2617127245	a0080d28bfdf0e1439bce148ee0be258b5615425		
+2026-11-19T20:31:11Z	spec-verifier	1118365712	ee43b749b4b0f6a1fe7335e63c08f423e1d27036	plans/greet-options/reports/spec/review-3.md	
+2026-11-19T20:33:38Z	spec-writer	3397004656	ee43b749b4b0f6a1fe7335e63c08f423e1d27036		
+2026-11-19T20:36:30Z	spec-verifier	1501619560	40a31d9e7caeb541cd6b2d455525ad26436aa5cb	plans/greet-options/reports/spec/review-4.md	
+2026-11-19T20:40:08Z	spec-writer	1063988933	40a31d9e7caeb541cd6b2d455525ad26436aa5cb		
+2026-11-19T20:40:40Z	spec-verifier	408471296	091e3e1a2afdd3a3aef6eed4fcf5cbe72f2272db	plans/greet-options/reports/spec/review-5.md	
+2026-11-19T20:46:00Z	task-writer	4182126581	091e3e1a2afdd3a3aef6eed4fcf5cbe72f2272db		
+2026-11-20T08:10:01Z	task-verifier	475076924	66fe5cb75c2223415cf71681f2bd70064350a325	plans/greet-options/reports/tasks/review.md	
+2026-11-20T08:16:25Z	task-writer	1907878585	66fe5cb75c2223415cf71681f2bd70064350a325		
+2026-11-20T08:23:37Z	task-verifier	2222567021	0b474a9e3c8020c88797fbc83d1a0cb767f666e8	plans/greet-options/reports/tasks/review-2.md	
+2026-11-20T09:25:09Z	task-writer	3894123850	0b474a9e3c8020c88797fbc83d1a0cb767f666e8		
+2026-11-20T09:26:41Z	task-verifier	3896585844	2fb7a5635ed25f62a71864c760ae922d8f4d10e4	plans/greet-options/reports/tasks/review-3.md	
+2026-11-20T09:43:12Z	task-writer	1787048438	48ffa1ead95959418a41241775823795fb225324		
+2026-11-20T09:48:12Z	code-reviewer	964551507	48ffa1ead95959418a41241775823795fb225324	plans/greet-options/reports/phase-1/review-1.md	
+2026-11-20T09:56:29Z	code-reviewer	2359236466	48ffa1ead95959418a41241775823795fb225324	plans/greet-options/reports/phase-1/review-1-2.md	
+2026-11-20T10:00:59Z	spec-matcher	3987485788	6d426a5fc7016987f8d28d7dadc6ae9eced8a756	plans/greet-options/reports/phase-1/conformance.md	
+2026-11-20T10:07:44Z	code-reviewer	3357820632	08910f68eab3ae25981a4a2efcc082bc2c9e0d49	plans/greet-options/reports/phase-2/review-2a.md	
+2026-11-20T10:15:42Z	code-reviewer	2766394666	d70d306a9ca1b4088c1b97db36c7a12085a2927e	plans/greet-options/reports/phase-2/review-2b.md	
+2026-11-20T10:20:50Z	spec-matcher	906778097	feb393b5d7659a0e709b285f70e0dcdfc9035975	plans/greet-options/reports/phase-2/conformance.md	
+2026-11-20T10:23:13Z	task-writer	1758772014	feb393b5d7659a0e709b285f70e0dcdfc9035975		
+2026-11-20T10:25:00Z	task-verifier	693270908	feb393b5d7659a0e709b285f70e0dcdfc9035975	plans/greet-options/reports/phase-2/fix-unit-review.md	
+2026-11-20T10:28:33Z	task-writer	3593918381	feb393b5d7659a0e709b285f70e0dcdfc9035975		
+2026-11-20T10:32:14Z	code-reviewer	1957579370	6a95fde6814c8271deace63db19391be78c740c0	plans/greet-options/reports/phase-2/review-2c.md	
+2026-11-20T10:41:09Z	spec-matcher	906778097	0cfb3b7b42ba1f931ad8c760166cf42a8dc75677	plans/greet-options/reports/phase-2/conformance-2.md	plans/greet-options/reports/phase-2/conformance.md
+2026-11-20T10:51:53Z	code-reviewer	291096849	83e91a7c3a9f4170331d31a85af9afd72c7aaa2a	plans/greet-options/reports/phase-3/review-3.md	
+2026-11-20T11:04:00Z	code-reviewer	102267448	83e91a7c3a9f4170331d31a85af9afd72c7aaa2a	plans/greet-options/reports/phase-3/review-3-2.md	
+2026-11-20T11:08:52Z	spec-matcher	2137814378	762391236a7dc399978369d274e4dfb1abf09599	plans/greet-options/reports/phase-3/conformance.md	
+2026-11-20T11:16:03Z	task-writer	3720378617	762391236a7dc399978369d274e4dfb1abf09599		
+2026-11-20T11:17:07Z	task-writer	2452234169	762391236a7dc399978369d274e4dfb1abf09599		
+2026-11-20T11:19:52Z	task-verifier	4136549061	762391236a7dc399978369d274e4dfb1abf09599	plans/greet-options/reports/phase-3/fix-unit-review.md	
+2026-11-20T11:23:06Z	task-writer	935151511	762391236a7dc399978369d274e4dfb1abf09599		
+2026-11-20T11:24:19Z	task-writer	2891705319	762391236a7dc399978369d274e4dfb1abf09599		
+2026-11-20T11:28:36Z	code-reviewer	2105343645	ee8c9c8c8cf3c5517f1e5197e7308eca422e5d8c	plans/greet-options/reports/phase-3/review-3a.md	
+2026-11-20T11:34:33Z	spec-matcher	2137814378	2c26a4f24ffc5972c230a426a2d5118de552469b	plans/greet-options/reports/phase-3/conformance-2.md	plans/greet-options/reports/phase-3/conformance.md
+2026-11-20T11:40:44Z	spec-matcher	2137814378	2c26a4f24ffc5972c230a426a2d5118de552469b	plans/greet-options/reports/phase-3/conformance-3.md	plans/greet-options/reports/phase-3/conformance-2.md
+2026-11-20T12:02:10Z	code-reviewer	2034613722	9983638f878faf8cb0b3cea4df914c57e6ea4ca4	plans/greet-options/reports/phase-4/review-4.md	
+2026-11-20T12:15:49Z	code-reviewer	2719445896	9983638f878faf8cb0b3cea4df914c57e6ea4ca4	plans/greet-options/reports/phase-4/review-4-2.md	
+2026-11-20T12:22:10Z	spec-matcher	2240645916	53f32ec002de32b3bedb8e7f00440ccb659a9b03	plans/greet-options/reports/phase-4/conformance.md	
+2026-11-20T12:29:06Z	spec-matcher	2240645916	53f32ec002de32b3bedb8e7f00440ccb659a9b03	plans/greet-options/reports/phase-4/conformance-2.md	plans/greet-options/reports/phase-4/conformance.md
+2026-11-20T12:38:45Z	code-reviewer	2155219186	e41cadae3c6b475b7138d38f2f3eb80167409df4	plans/greet-options/reports/phase-5/review-5.md	
+2026-11-20T12:59:25Z	code-reviewer	4016827607	e41cadae3c6b475b7138d38f2f3eb80167409df4	plans/greet-options/reports/phase-5/review-5-2.md	
+2026-11-20T13:07:26Z	spec-matcher	3438128007	d76d78638bdfc9136cbabd8e080af8f879cad05d	plans/greet-options/reports/phase-5/conformance.md	
+2026-11-20T13:22:25Z	code-reviewer	293319354	21f692fe1b5da6efc4aef835730ce826550615cd	plans/greet-options/reports/phase-6/review-6.md	
+2026-11-20T13:31:13Z	spec-matcher	390973994	6ec27a39f0812d4da257c9e567a3c63d5282f638	plans/greet-options/reports/phase-6/conformance.md	
+2026-11-20T13:41:12Z	code-reviewer	4035322272	2489cca7d89e88b0197bee2588099629cf1f1a38	plans/greet-options/reports/phase-7/review-7.md	
+2026-11-20T14:20:06Z	code-reviewer	1395778636	2489cca7d89e88b0197bee2588099629cf1f1a38	plans/greet-options/reports/phase-7/review-7-2.md	
+2026-11-20T15:09:03Z	code-reviewer	3939744616	2489cca7d89e88b0197bee2588099629cf1f1a38	plans/greet-options/reports/phase-7/review-7-3.md	
+2026-11-20T16:09:25Z	code-reviewer	964949423	2489cca7d89e88b0197bee2588099629cf1f1a38	plans/greet-options/reports/phase-7/review-7-4.md	
+2026-11-20T16:51:46Z	code-reviewer	145761940	2489cca7d89e88b0197bee2588099629cf1f1a38	plans/greet-options/reports/phase-7/review-7-5.md	
+2026-11-20T17:07:51Z	spec-matcher	1580067505	3f54a14537eb36e9a76ba559dd508bd852c4983d	plans/greet-options/reports/phase-7/conformance.md	
+2026-11-20T17:14:55Z	spec-matcher	1701689941	9da58b2b26783f72027d38be1ac2a9652123dda8	plans/greet-options/reports/final/conformance.md	

@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
-# make-toy.sh [target-dir]   (default: ../pipeline-toy next to this repo)
+# make-toy.sh [--dostuff] [--sync] [target-dir]   (default: ../pipeline-toy next to this repo)
 # Creates a tiny Node CLI repo for the M6 dry run and copies this repo's pipeline into it.
+# With --dostuff the pipeline is installed for dostuff (.dostuff/, via install-dostuff.sh), not Claude Code.
 # With --sync on an existing toy, only the pipeline files are refreshed.
 set -eu
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-sync=0; [ "${1:-}" = "--sync" ] && { sync=1; shift; }
+sync=0; flavor=claude
+while [ "${1:-}" = "--sync" ] || [ "${1:-}" = "--dostuff" ]; do
+  if [ "$1" = "--sync" ]; then sync=1; else flavor=dostuff; fi
+  shift
+done
 T="${1:-$ROOT/../pipeline-toy}"
 
 copy_pipeline() {
+  if [ "$flavor" = dostuff ]; then  # the dostuff install (.dostuff/), same small units as below
+    rm -rf "$T/.dostuff/agents" "$T/.dostuff/hooks" "$T/.dostuff/scripts"
+    bash "$ROOT/install-dostuff.sh" "$T" >/dev/null
+    printf 'TEST_CMD="npm test"\nMAX_UNIT_TASKS=2\nMAX_LOOPS=2\nUNIT_GATE=exceptions\n' > "$T/.dostuff/pipeline.conf"
+    # A throwaway repo: nothing should ask, as the build-feature skill advises for a run to the end.
+    grep -q '^permissions:' "$T/.dostuff/config.yaml" || printf '\npermissions:\n  mode: auto\n' >> "$T/.dostuff/config.yaml"
+    return
+  fi
   mkdir -p "$T/.claude"
   rm -rf "$T/.claude/agents" "$T/.claude/hooks" "$T/.claude/scripts" "$T/.claude/skills"
   cp -r "$ROOT/.claude/agents" "$ROOT/.claude/hooks" "$ROOT/.claude/scripts" "$T/.claude/"
@@ -20,7 +33,16 @@ copy_pipeline() {
   printf 'TEST_CMD="npm test"\nMAX_UNIT_TASKS=2\nMAX_LOOPS=2\nUNIT_GATE=exceptions\n' > "$T/.claude/pipeline.conf"
 }
 
-if [ $sync -eq 1 ]; then copy_pipeline; echo "synced pipeline into $T"; exit 0; fi
+if [ $sync -eq 1 ]; then
+  copy_pipeline
+  # Commit the refreshed pipeline in the toy: left uncommitted it reads as half-built work (status.sh dirty:)
+  # and as stray files at every unit commit.
+  d=.claude; [ "$flavor" = dostuff ] && d=.dostuff
+  if git -C "$T" rev-parse --git-dir >/dev/null 2>&1 && [ -n "$(git -C "$T" status --porcelain -- "$d")" ]; then
+    git -C "$T" add -A -- "$d" && git -C "$T" commit -qm "chore: sync pipeline" -- "$d" && echo "committed the sync in the toy"
+  fi
+  echo "synced pipeline into $T"; exit 0
+fi
 [ -e "$T" ] && { echo "$T exists; remove it or use --sync" >&2; exit 1; }
 mkdir -p "$T/bin" "$T/src" "$T/test" "$T/scripts"
 cat > "$T/package.json" <<'EOF'
