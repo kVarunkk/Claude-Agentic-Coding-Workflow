@@ -3,6 +3,7 @@
 # Stages exactly what the unit owns, instead of "git add -A". Run from the repo root.
 # Owned: the files in the unit's Files column (an entry ending in "/" owns that folder), anything
 # under <plan-dir>, and any path named under "## Differences from the spec" in the tasks file.
+# Never owned: a dotfile, dot-folder or ".part" name under <plan-dir> (scratch an agent left in reports/).
 # If another file changed, it lists those files, stages nothing and exits 1.
 # Exit 1 also when nothing changed at all.
 set -u
@@ -24,7 +25,8 @@ diffs=$(tr -d '\r' < "$tasks" | awk '/^## Differences from the spec/ { on = 1; n
 
 is_owned() {
   local p="$1" o
-  case "$p" in "$plan"/*) return 0 ;; esac
+  # Under the plan dir, scratch files (dotfiles, *.part*) are not owned: agents leave them in reports/.
+  case "$p" in "$plan"/*) case "/${p#"$plan"/}" in */.*|*.part*) return 1 ;; esac; return 0 ;; esac
   while IFS= read -r o; do
     [ -n "$o" ] || continue
     [ "$p" = "$o" ] && return 0

@@ -39,7 +39,7 @@ List the domain features the changed code handles, in the domain's own terms. Fo
 Work through the lenses in [references/lenses.md](references/lenses.md), tests first:
 
 0. **Gate integrity.** The author wants green, so anything that loosens a gate needs proof. Flag: a test deleted, skipped (`.skip`, `xit`, `@pytest.mark.skip`) or with relaxed asserts; snapshots changed without their behaviour; lint, type or CI config relaxed; exceptions swallowed; coverage or timeout thresholds lowered. Each is P0 (P1 if the reason is logged and plausible). Never auto-fix these.
-1. **Tests.** For each test of changed behaviour, imagine two edits: break the behaviour (does the test fail?) and change only internals (does it still pass?). A test that fails either is weak. Ask what wrong implementation would still pass it. When a distinguishing input is cheap, write it as a probe script in the scratchpad (or `$TMPDIR`) and run it with the project's runner. Keep the output as evidence.
+1. **Tests.** For each test of changed behaviour, imagine two edits: break the behaviour (does the test fail?) and change only internals (does it still pass?). A test that fails either is weak. Ask what wrong implementation would still pass it. When a distinguishing input is cheap, write it as a probe script in the scratchpad (or `${TMPDIR:-/tmp}`) and run it with the project's runner. Keep the output as evidence.
 2. **Data shape.** Look for structures that can hold invalid states, information stored twice and kept in sync by hand, and cases you can only extend by grepping.
 3. **Correctness.** Partition by partition.
 4. **Security.** Apply whenever the change reads untrusted input, makes an access or policy decision, or handles secrets.
@@ -55,14 +55,15 @@ For each confirmed defect, hunt its variants: other paths into the same code, an
 
 ## 4b. Prove the guards
 
-Do not trust "the test fails without the code"; run it. For each task whose tests guard a behaviour (a validation, an escape, a limit, an error path), make one named mutation that breaks that behaviour **in a scratch copy, never in the repo** (`bash .claude/scripts/scratch-copy.sh "$TMPDIR/mut-<scope>"` in a pipeline repo, else a copy under the scratchpad). Run the project's test command there. Expect red.
+Do not trust "the test fails without the code"; run it. For each task whose tests guard a behaviour (a validation, an escape, a limit, an error path), make one named mutation that breaks that behaviour **in a scratch copy, never in the repo** (`bash .claude/scripts/scratch-copy.sh "${TMPDIR:-/tmp}/mut-<scope>"` in a pipeline repo, else a copy under the scratchpad). Run the project's test command there. Expect red.
 
 - Record each as `mutation: <what you broke> -> <test> red|green`.
-- A guard test that stays green under its mutation is P1 (the test does not guard anything).
+- A guard test that stays green under its mutation is P1 (the test does not guard anything). So is any green mutation that breaks behaviour a spec id cited by the change states (`--shout` consuming the next argument against a REQ that says it does not): it counts even when no listed fixture covers that input. Call a mutant equivalent only with the reason it cannot change any output.
+- A negative requirement (no network, no file write, no secret read) is guarded by the check the spec names for it. A mutation that adds code nobody wrote (a `fetch` call, a new import, a spawned `curl`) only to show a spy can be evaded proves nothing about this change: report a gap beyond the spec's named check as P2. It is P1 only when the spec's own named check misses it, or the change itself does the forbidden thing (R64).
 - Cheap alternative for a new test: copy the tree at the base (`scratch-copy.sh <dir> --base <BASE>`), add the new test file, and show it fails there.
 - Delete the copy when done. One mutation per guard task is enough.
 
-**Recheck mode** (`RECHECK: <previous report>`): check each P0 and P1 finding of that report (`fixed` or `open`, with evidence), rerun its mutation, and look for new P0 or P1 problems in the lines the fix touched. Report no new P2s.
+**Recheck mode** (`RECHECK: <previous report>`): check each P0 and P1 finding of that report (`fixed` or `open`, with evidence), rerun its mutation, and look for new P0 or P1 problems in the lines the fix touched. Report no new P2s. A new hole in a test helper the fix round wrote to close a previous finding (another API the same spy misses, another run that skips the same preload) is the same finding class again: P2, not P1, unless the spec's named check covers it. Chasing one class round after round never converges (run 11, unit 7: four rounds on one spy) (R64).
 
 ## 5. Verify
 
@@ -76,9 +77,11 @@ Then take the author's side against every finding that no run confirmed: is it g
 
 ## 6. Report
 
+In the build pipeline (your prompt has a `REPORT:` line), leave out the `Verdict:` header line: the report's only verdict is `verdict: pass|fail` in the SUMMARY block, and `check-report.sh` rejects a report that carries `Verdict: changes-requested` or `approve`.
+
 ```
 ## Review: <scope> (<base> → <head>)
-Verdict: approve | approve-with-notes | changes-requested
+Verdict: approve | approve-with-notes | changes-requested   (standalone reviews only)
 Findings: P0 <n> · P1 <n> · P2 <n> · P3 <n>    Partitions reviewed: <n>
 
 ### Index
@@ -107,7 +110,7 @@ Q01: <question> Blocking: yes | no
 ```
 
 - **P0**: wrong behaviour, data loss, a security hole or a broken contract. Fix before merge.
-- **P1**: a real bug in an edge case, behaviour changed without a test, or a spec contradiction.
+- **P1**: a real bug in an edge case, behaviour changed without a test, or a spec contradiction. A finding you reproduced with a concrete input that gives output the spec or the task row forbids is P1, however small: a P2 never starts a fix round, so a reproduced defect rated P2 ships and fails the phase check later.
 - **P2**: a design or maintainability cost that will hurt within weeks.
 - **P3**: a nit; the author decides.
 
@@ -124,7 +127,7 @@ p0: <n>
 p1: <n>
 p2: <n>
 scope: clean|drift|n/a
-mutations: <n run>, <n still green>
+mutations: <n> run, <n> still green
 top:
 - <F-id> [P<n>] <file:line> <one line>   (max 5, most severe first)
 report: <path to the saved report, or inline>

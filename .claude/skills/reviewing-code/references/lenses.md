@@ -13,7 +13,7 @@ What to look for in each lens. Every finding still needs a failure scenario and 
 
 ## 1. Tests
 
-For each test that covers changed behaviour, ask: **what wrong implementation would still pass it?** For each answer, write the distinguishing input: one where the right and the wrong implementation give different results. Run it as a probe in the scratchpad or `$TMPDIR` with the project's own runner, and leave repository files untouched.
+For each test that covers changed behaviour, ask: **what wrong implementation would still pass it?** For each answer, write the distinguishing input: one where the right and the wrong implementation give different results. Run it as a probe in the scratchpad or `${TMPDIR:-/tmp}` with the project's own runner, and leave repository files untouched.
 
 - Wrong result → a defect. Right result, but no test checks it → a test gap.
 - **Behaviour changed with no test**: new public functions, routes, business rules, transformations and error paths need tests. Config, docs and pure markup usually don't. Treat it as at least P1.

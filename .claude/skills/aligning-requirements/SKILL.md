@@ -36,7 +36,7 @@ The **frontier** is every decision whose prerequisites are settled. Ask only the
 
 ## 4. Write the brief
 
-Done when the frontier is empty: every branch visited, nothing silently assumed. Write `plans/<feature>/feature-<feature>-brief.md` from [templates/brief.md](templates/brief.md). Keep it to decisions, not prose. Each decision gets an id `D-01`, `D-02`, … that the spec can cite.
+Done when the frontier is empty: every branch visited, nothing silently assumed. Every number, limit, name and example in the user's requirement text goes into the brief word for word (in Scope or a decision), so the spec never asks again what the requirement already said (R62). Write `plans/<feature>/feature-<feature>-brief.md` from [templates/brief.md](templates/brief.md). Keep it to decisions, not prose. Each decision gets an id `D-01`, `D-02`, … that the spec can cite.
 
 ## 5. Reach consensus
 

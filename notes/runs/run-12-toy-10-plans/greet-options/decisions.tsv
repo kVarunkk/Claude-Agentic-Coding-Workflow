@@ -1,0 +1,7 @@
+ts	step	decision	why	evidence	result
+2026-11-20T19:19:00Z	spec	fix-round	spec P1 findings	plans/greet-options/reports/spec/review.md	new spec-writer spawned
+2026-11-20T19:25:45Z	spec	fix-round	spec P1 finding	plans/greet-options/reports/spec/review-2.md	new spec-writer spawned
+2026-11-20T19:34:03Z	spec-gate	Q-1	json single greeting shape	user answer	bare string
+2026-11-20T19:34:04Z	spec-gate	Q-2	unknown config keys	user answer	reject as error
+2026-11-20T19:34:04Z	spec-gate	Q-3	shout in json	user answer	uppercase inside json
+2026-11-20T20:13:31Z	tasks	stop	task-writer edited the verifier's review report	plans/greet-options/reports/tasks/review.md	blocked: contaminated report must not be committed

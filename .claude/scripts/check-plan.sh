@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Mechanical checks for a plans/<feature>/ folder:
 #   1. every id is declared once (spec bullets, task/goal rows)
-#   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count)
-#   3. every referenced id is declared somewhere
+#   2. every REQ and SEC id in the spec is referenced by the tasks file (ranges like REQ-011 – REQ-016 count);
+#      an id declared as "(removed in v0.2: ...)" is exempt
+#   3. every id referenced on its own is declared somewhere (ranges are skipped: "REQ-010 to REQ-019"
+#      as a group label over REQ-010..REQ-012 is fine)
 #   4. no template placeholders or TODO/TBD left
 #   5. tasks grammar: "## Phase <id>: <title>" units, optional "depends:", one table with
 #      ID | Task | Spec | Files | Status | Done, status [ ] or [x], ISO date on done rows,
@@ -34,6 +36,11 @@ refs() {
   }'
 }
 
+# Ids referenced on their own in a file: ranges are removed first, ends included.
+refs_plain() {
+  sed -E "s/\b($ALL)-[0-9]+ *(–|—|-|to) *($ALL)-[0-9]+\b//g" "$1" | grep -oE "\b($ALL)-[0-9]+\b"
+}
+
 spec_decl=$(grep -oE "^[[:space:]]*- \*\*($P)-[0-9]+" "$spec" | grep -oE "($P)-[0-9]+")
 task_decl=$( { grep -oE "^\| *(TASK|GOAL)-[0-9]+ *\|" "$tasks"; grep -oE "^[[:space:]]*- \*\*GOAL-[0-9]+" "$tasks"; } | grep -oE "(TASK|GOAL)-[0-9]+")
 
@@ -43,15 +50,22 @@ if [ -n "$dups" ]; then
 fi
 
 task_refs=$(refs "$tasks" | sort -u)
-missing=$(echo "$spec_decl" | grep -E "^(REQ|SEC)-" | sort -u | comm -23 - <(echo "$task_refs"))
+# Ids kept as "(removed in vX: ...)" stubs are declared but need no task.
+removed=$(grep -E "^[[:space:]]*- \*\*($P)-[0-9]+\*\*:? *\(removed" "$spec" | grep -oE "($P)-[0-9]+" | sort -u)
+missing=$(echo "$spec_decl" | grep -E "^(REQ|SEC)-" | sort -u | comm -23 - <(echo "$task_refs") | comm -23 - <(echo "$removed"))
 if [ -n "$missing" ]; then
   echo "FAIL: REQ/SEC ids with no task:"; echo "$missing" | sed 's/^/  /'; fail=1
 fi
 
 declared=$(printf '%s\n%s\n' "$spec_decl" "$task_decl" | grep -v '^$' | sort -u)
-undeclared=$( { refs "$spec"; refs "$tasks"; } | sort -u | comm -23 - <(echo "$declared"))
+undeclared=$( { refs_plain "$spec"; refs_plain "$tasks"; } | sort -u | comm -23 - <(echo "$declared"))
 if [ -n "$undeclared" ]; then
   echo "WARN: ids referenced but never declared:"; echo "$undeclared" | sed 's/^/  /'; warn=1
+fi
+
+inv=$(LC_ALL=C grep -nE "$(printf '%b' '\0357\0273\0277|\0342\0200[\0213-\0215]|\0342\0201\0240')" "$spec" "$tasks" 2>/dev/null)
+if [ -n "$inv" ]; then
+  echo "FAIL: invisible characters (U+FEFF or zero-width) in the plan; name them in words instead:"; echo "$inv" | cut -c1-120 | sed 's/^/  /'; fail=1
 fi
 
 ph=$(grep -nE "TBD|TODO|<YYYY-MM-DD>|<feature>|<one sentence|<area>|<repo or team>" "$spec" "$tasks")

@@ -4,10 +4,16 @@
 # Default: the working tree as it is now (tracked and untracked files, not ignored ones).
 # --base <rev>: the tree at <rev> instead (e.g. BASE, to show a new test fails without the change).
 # node_modules is linked in when present. <dest> must not exist. Remove it with rm -rf when done.
+# <dest> must be outside the repo and not directly under / (an unset TMPDIR turns "$TMPDIR/mut-1a" into
+# "/mut-1a"): use "${TMPDIR:-/tmp}/mut-<unit>".
 set -u
 dest="${1:?usage: scratch-copy.sh <dest> [--base <rev>]}"
 [ -e "$dest" ] && { echo "$dest exists" >&2; exit 1; }
 root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "not a git repo" >&2; exit 1; }
+parent=$(cd "$(dirname "$dest")" 2>/dev/null && pwd -P) || { echo "parent of $dest does not exist" >&2; exit 1; }
+[ "$parent" = "/" ] && { echo "refusing $dest: directly under / (TMPDIR unset? use \"\${TMPDIR:-/tmp}/mut-<unit>\")" >&2; exit 1; }
+rootp=$(cd "$root" && pwd -P)
+case "$parent/" in "$rootp"/*) echo "refusing $dest: inside the repo; scratch copies go under \${TMPDIR:-/tmp}" >&2; exit 1 ;; esac
 mkdir -p "$dest" || exit 1
 if [ "${2:-}" = "--base" ]; then
   rev="${3:?--base needs a revision}"

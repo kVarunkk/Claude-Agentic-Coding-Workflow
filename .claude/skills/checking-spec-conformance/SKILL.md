@@ -18,10 +18,11 @@ This skill checks evidence; it doesn't hunt for new defects. That is the job of 
 - From the spec, list every checkable item: `REQ`, `SEC`, `CON`, `GUD`, `PAT` and `TEST` ids, the data model (§3), component signatures (§4), API contracts and config values. Note each item's exact limits and values.
 - From the tasks file, read the ticked tasks, **Decisions taken** and **Differences from the spec**. A logged difference is an accepted deviation.
 - With `--phase N`, limit grading to the ids in the Spec column of phase N's units (`## Phase N…`, including sub-phases `Na`, `Nb`). Still run the full suite.
+- **A phase grades its own slice.** An id in phase N's Spec column often also sits in a later phase's rows: the parser comes in phase 1, the CLI output for the same REQ in phase 4. Grade the id on the behaviour phase N's task rows ask for (their Tests and Green steps), and on that evidence alone. The rest of the id is `➖ Not started`, severity none, naming the later task that owns it (`REQ-050: Met for TASK-014 (parser rejects --bogus); stdout/stderr/exit 2 Not started, TASK-042`). It is not Untested, Partial or Missing, and it never fails a phase check. Grade Partial or Untested only when phase N's own rows ask for something that is not there or not tested. Read the traceability table (or every phase's Spec column) to see who owns what; the final check (no `--phase`) grades every id whole.
 
 ## 2. Run the tests
 
-Find the test command (CLAUDE.md, README, `package.json` scripts, CI config). Run the **full** suite with per-test names in the output (`vitest run --reporter=verbose`, `pytest -v`, `go test -v`) and save the log to the scratchpad. Also run the lint and type checks the spec names.
+Find the test command (CLAUDE.md, README, `package.json` scripts, CI config). Run the **full** suite with per-test names in the output (`vitest run --reporter=verbose`, `pytest -v`, `go test -v`) and save the log to the scratchpad (in a pipeline run: under `${TMPDIR:-/tmp}`, never in the project). Also run the lint and type checks the spec names.
 
 - **Any test fails:** report each failure as Critical and stop, because conformance on a red suite means little. If the user says to continue anyway, continue in **diagnostic mode** and say so in the report's first line.
 - **No runnable suite:** note it. Every id can reach Untested at best.
@@ -49,6 +50,8 @@ Code existing isn't evidence. If a test was skipped, or its assertions don't che
 
 **Run it for real.** When the spec names a runnable entry point with an example (a CLI command, a request, a script), run it once in the scratchpad and use the output as Verified evidence for the ids it shows. Tests alone are not the whole proof.
 
+**Spend effort where the doubt is.** Read the code and the test assertions for every id; probe the running code only for an id you would otherwise grade Untested or Partial. One probe per id is enough.
+
 **Statuses:**
 
 | Status | When | Severity |
@@ -60,9 +63,15 @@ Code existing isn't evidence. If a test was skipped, or its assertions don't che
 | ⚠️ Diverges | does something else, with no Differences entry | Critical |
 | 📝 Accepted | differs, but logged under Differences or Decisions taken | none |
 | 🔄 Outdated | the code is right and the spec is stale (a deliberate, unlogged improvement) | Warning: update the spec |
-| ➖ Not started | its task hasn't started (only when checking work in progress) | none |
+| ➖ Not started | its task hasn't started, or (with `--phase N`) the part of the id a later phase's task owns | none |
 
-**A logged test change is not Accepted.** A Differences entry that narrows, weakens, removes or replaces a test for a REQ or SEC id does not make that id Accepted. Grade the id on the evidence that remains: behaviour with no test left is Untested, behaviour only partly tested is Partial, at the severity in the table. Accepted is only for behaviour that differs on purpose. Phase and final checks must grade the same evidence the same way.
+**Checked by code review.** A CON, GUD or PAT id that the spec itself marks "Checked by code review" (an implementation choice no test can observe, such as `process.exitCode` over `process.exit`) is ✅ Met on Inspected evidence: give the file:line, and grade it Diverges if the code does otherwise. It is not Untested and carries no Warning. This never applies to REQ or SEC ids, nor to a marker added outside the approved spec (a tasks Decisions row or a Differences entry).
+
+**A logged test change is not Accepted.** A Differences entry or Decisions-taken row that narrows, weakens, removes or replaces a test for a REQ or SEC id, or leaves part of it to code review or reading, does not make that id Accepted. Grade the id on the evidence that remains: behaviour with no test left is Untested, behaviour only partly tested is Partial, at the severity in the table. Accepted is only for behaviour that differs on purpose. Phase and final checks must grade the same evidence the same way.
+
+**Final check carries the phase findings.** Without `--phase`, read the newest `conformance*.md` of every `reports/phase-*/` folder first. Each Critical, Major and Warning they list appears in your report again at the same severity, unless you name what closed it (the test, `file › test name`, or the commit). Dropping a phase finding silently is not allowed: the same evidence gets the same grade.
+
+**Final check reuses the phase grades.** An id a phase report graded Met keeps that grade without a fresh look when `git diff --stat <that phase's tag>..HEAD` shows none of its code or test files changed and its test passed in today's run: cite it as `Met (phase N)`. Grade afresh only the ids whose files changed, the ids no phase graded, and the whole-change checks.
 
 **Materiality.** If the naming, file layout or technique differs but the behaviour and contract hold, the id conforms. Flag missing behaviour, contradicted decisions, broken contracts, skipped validation or migration steps, and unplanned scope. When torn between two statuses, give the evidence for both and pick the stricter one.
 
@@ -123,11 +132,13 @@ mode: full | diagnostic (suite failing) | phase N
 ## Contracts (data model, API, config)
 ## Tasks file
 ## All ids
-| Id | Status | Tier | Evidence (code) | Test |
-|---|---|---|---|---|
+Met: REQ-001, REQ-002, SEC-001, … (one comma-separated line)
+| Id | Status | Tier | Test |
+|---|---|---|---|
+| REQ-014 | ⚠️ Diverges | Inspected | — |
 ```
 
-Omit empty sections.
+Omit empty sections. Keep the report short (about 150 lines at most): Met ids go on the one `Met:` line, the table has a row only for the other ids, and evidence (file:line, quotes) appears only under Critical, Major and Warnings. Write the report whole in one write; never split it into part files to join later.
 
 **Attention** (when the prompt has `DECISIONS: <decisions.tsv>`, an unattended run): read the decision trail and list, most important first, what the user must look at before accepting: fix rounds that did not converge, units committed with open findings, added units, skipped steps, accepted Differences that change behaviour, anything decided without the user. One line each, with the row's step and evidence. You did not do this work; judge it as an outsider.
 
